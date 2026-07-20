@@ -83,14 +83,44 @@ Each 1920s persona carries three light stats — **Brawn / Wits / Nerve** —
 that modify d20 checks. Dice rolls are shown dramatically (phone roll, TV
 result). Picking a persona is picking a playstyle.
 
+### Campaign XP
+
+Each game banks experience: +1 for surviving, +1 for completing your
+secret quest, +1 for being on the winning side, +1 for discovering a rare
+scene. Between games, spend XP on +1 stat bumps (max +2 per stat), which
+persist all evening and feed every check — including the Rising's dice.
+
 ### Night exploration & items
 
 Players without a power action choose a location each night — the docks,
 the library, the graveyard, Hibb's Roadhouse, the Old Chapel, or the
-Asylum Annex — and get a short narrated scene with a choice,
+Asylum Annex — and get a narrated scene with a choice,
 Call-of-Cthulhu style. Outcomes (sometimes gated by a
 stat check): find an item, gain/lose sanity, or generate flavor that feeds
 the morning narration ("three townsfolk were seen near the docks").
+
+**Deep scenes:** some successful choices open a second stage — the scene
+continues into a follow-up beat with its own choice and check, where the
+best loot hides.
+
+**Rare scenes:** each location hides one gated scene that opens under
+conditions — holding the Skeleton Key, a third visit to the same location
+in one game, or the location having gone strange (doom ≥ 5 or unrest ≥ 4).
+Rares are guaranteed when their gate is met, pay out generously, and award
+bonus XP for the discovery.
+
+**Fellow travelers:** explorers who chose the same location glimpse each
+other — private, true information delivered at dawn ("You were not alone:
+the coroner was also at the docks"). At sanity ≤ 2, there's a 25% chance
+one glimpsed face is *wrong* — below 3 sanity, don't trust your eyes.
+
+**Location unrest (persistent across the whole evening):** every failed
+check makes a location stranger. Unrest raises that location's check DCs
+(+1 per 2 unrest, max +2), opens its "strange"-gated rare at 4, and gets
+announced in the dawn report when a place tips over.
+
+**Low-sanity visions:** at sanity ≤ 2, exploration scenes gain an extra
+hallucinated line.
 
 One-use items, curated so nothing directly reveals hidden roles:
 
@@ -100,6 +130,11 @@ One-use items, curated so nothing directly reveals hidden roles:
 | **Whiskey flask** | Shrug off a haunting curse. |
 | **Press credentials** | Privately see one vote's tally breakdown after the fact. |
 | **Grave dirt** | Force the next haunting to target a player of your choice. |
+| **Sea-Glass Charm** | +2 on your next d20 check. Automatic. |
+| **The Hanged Man** | When a check fails, redraw the die and take the new result. |
+| **Ring of Salt** | Blocks the next haunting aimed at you. Automatic. |
+| **Skeleton Key** | Opens key-gated rare scenes (consumed in the lock). |
+| **Dead Man's Watch** | At night, follow one player: learn where they went — or that no record exists (Archivist semantics, single-use, any explorer can hold it). |
 
 ### Sanity & madness
 

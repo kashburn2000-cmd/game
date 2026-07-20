@@ -7,7 +7,7 @@
 
   let ws = null, view = null, role = null, code = null, screen = 'landing';
   let timeOffset = 0, lastFxSeq = -1, lastPhaseKey = '', reconnectTries = 0, connBanner = false;
-  let hauntSel = {}, gravedirtMode = false, spendItem = false;
+  let hauntSel = {}, gravedirtMode = false, watchMode = false, spendItem = false;
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('soa') || '{}'); } catch { }
   saved.rooms = saved.rooms || {};
@@ -240,6 +240,8 @@
                 ${(c.titles || []).map((t) => `<p class="titlerow">🏅 <b>${esc(t.title)}</b>: ${esc(t.name)} <i>(${esc(t.note)})</i></p>`).join('') || '<p class="hint">No honors earned. Shameful.</p>'}
                 <h3>SECRET QUESTS</h3>
                 ${(c.objectives || []).filter((o) => o.obj).map((o) => `<p class="objrow">${o.obj.done ? '✅' : '❌'} ${esc(o.name)}: <i>${esc(o.obj.text)}</i></p>`).join('')}
+                <h3>EXPERIENCE</h3>
+                ${(c.xp || []).filter((x) => x.gained > 0).map((x) => `<p class="objrow">🧬 ${esc(x.name)} +${x.gained} <i>(${x.total} banked)</i></p>`).join('') || '<p class="hint">The town learned nothing. Typical.</p>'}
               </div>
             </div>
             ${doomTrack(c.doom ?? v.doom)}
@@ -299,6 +301,8 @@
     ${(y.quirks || []).length ? `<div class="quirkcard">🧠 <b>Madness:</b> ${y.quirks.map(esc).join(' · ')}</div>` : ''}
     ${y.objective ? `<div class="objcard ${y.objective.done ? 'done' : ''}">🗝 <b>Secret quest:</b> ${esc(y.objective.text)} ${y.objective.done ? '✅ done (+2✴)' : ''}</div>` : ''}
     ${y.archive ? `<div class="presscard">📜 <b>THE RECORDS — NIGHT ${y.archive.day}</b><br>${esc(y.archive.name)}: ${y.archive.loc ? 'an entry at <b>' + esc(y.archive.loc) + '</b>.' : '<b>NO ENTRY.</b> They were busy elsewhere…'}</div>` : ''}
+    ${y.watch ? `<div class="presscard">⌚ <b>THE WATCH REMEMBERS — NIGHT ${y.watch.day}</b><br>${esc(y.watch.name)}: ${y.watch.loc ? 'went to <b>' + esc(y.watch.loc) + '</b>.' : '<b>NO RECORD.</b> Their evening left no trace…'}</div>` : ''}
+    ${y.sighting ? `<div class="sightcard">👁 <b>YOU WERE NOT ALONE.</b> At ${esc(y.sighting.loc)} last night, you glimpsed: <b>${y.sighting.others.map(esc).join(', ')}</b>.${y.sanity != null && y.sanity <= 2 ? ' <i>(Your eyes have been… unreliable lately.)</i>' : ''}</div>` : ''}
     ${itemCards(y)}`;
 
   function itemCards(y) {
@@ -349,29 +353,59 @@
         <div class="targets">${ui.targets.map((t) => `<button class="targetbtn" data-action="night" data-id="${t.id}">${esc(t.name)}</button>`).join('')}</div>`;
     }
     // Explorer.
+    const watchBtn = ui.hasWatch ? (watchMode
+      ? `<h3>⌚ Whose evening do you follow?</h3><div class="targets small">${v.players.filter((p) => p.alive && p.id !== y.id).map((t) => `<button class="targetbtn" data-action="use-watch" data-id="${t.id}">${esc(t.persona ? t.persona.name : t.name)}</button>`).join('')}<button class="targetbtn" data-action="watch-cancel">put the watch away</button></div>`
+      : `<button class="minibtn" data-action="watch-mode">⌚ use the Dead Man’s Watch tonight</button>`) : '';
     if (!ui.scene) {
       return `
         <h2>NIGHT ${v.day}</h2>${roleCard(y)}
         <h3>The night is long. Where do you go?</h3>
-        <div class="targets">${(ui.locations || []).map((l) => `<button class="targetbtn" data-action="explore" data-id="${l.id}">${l.icon} ${esc(l.name)}</button>`).join('')}</div>
+        <div class="targets">${(ui.locations || []).map((l) => `
+          <button class="targetbtn" data-action="explore" data-id="${l.id}">${l.icon} ${esc(l.name)}
+            ${l.unrest ? `<small class="unrest">${'🌀'.repeat(Math.min(3, Math.ceil(l.unrest / 2)))} strange</small>` : ''}
+            ${l.rareReady ? `<small class="rareready">✨ something waits</small>` : ''}
+          </button>`).join('')}</div>
+        ${watchBtn}
         ${statusCards(y)}`;
+    }
+    const rareBanner = ui.scene.rare ? `<div class="rarecard">✨ A RARE DOOR HAS OPENED</div>` : '';
+    const partialBlock = (p) => p ? `
+      ${p.roll ? rollCard(p.roll) : ''}
+      <p class="scenetext partial">${esc(p.text)}</p>
+      ${p.gained ? `<div class="itemcard gained">${p.gained.icon} You found: <b>${esc(p.gained.name)}</b></div>` : ''}` : '';
+    if (ui.await) {
+      return `
+        <h2>${esc(ui.scene.loc).toUpperCase()}</h2>${rareBanner}
+        ${rollCard(ui.await.roll)}
+        <p class="hint">The Hanged Man stirs in your pocket. Fate has not landed yet.</p>
+        <div class="targets">
+          <button class="targetbtn" data-action="tarot-use">🎴 Draw again — take the new fate</button>
+          <button class="targetbtn abstain" data-action="tarot-decline">Accept what the die said</button>
+        </div>`;
     }
     if (!ui.result) {
       return `
-        <h2>${esc(ui.scene.loc).toUpperCase()}</h2>
+        <h2>${esc(ui.scene.loc).toUpperCase()}</h2>${rareBanner}
+        ${ui.scene.deeper ? partialBlock(ui.scene.partial) + `<p class="hint">— the night is not done with you —</p>` : ''}
         <p class="scenetext">${esc(ui.scene.text)}</p>
-        <div class="targets">${ui.scene.choices.map((c, i) => `<button class="targetbtn" data-action="explore-choice" data-i="${i}">${esc(c.label)}${c.check ? ` <small>(${c.check.stat} check, ${c.check.dc}+)</small>` : ''}</button>`).join('')}</div>`;
+        ${ui.scene.vision ? `<p class="visiontext">${esc(ui.scene.vision)}</p>` : ''}
+        <div class="targets">${ui.scene.choices.map((c, i) => `<button class="targetbtn" data-action="explore-choice" data-i="${i}">${esc(c.label)}${c.check ? ` <small>(${c.check.stat} check, ${c.check.dc}+)</small>` : ''}</button>`).join('')}</div>
+        ${watchBtn}`;
     }
     const r = ui.result;
     return `
-      <h2>${esc(ui.scene.loc).toUpperCase()}</h2>
-      ${r.roll ? `<div class="rollcard ${r.roll.ok ? 'ok' : 'bad'}">🎲 ${r.roll.die} + ${r.roll.bonus} (${esc(r.roll.stat)}) = <b>${r.roll.total}</b> vs ${r.roll.dc} — ${r.roll.ok ? 'SUCCESS' : 'FAILURE'}</div>` : ''}
+      <h2>${esc(ui.scene.loc).toUpperCase()}</h2>${rareBanner}
+      ${partialBlock(r.partial)}
+      ${r.roll ? rollCard(r.roll) : ''}
       <p class="scenetext">${esc(r.text)}</p>
       ${r.gained ? `<div class="itemcard gained">${r.gained.icon} You found: <b>${esc(r.gained.name)}</b></div>` : ''}
       ${r.sanity ? `<p class="hint">${r.sanity > 0 ? '+' : ''}${r.sanity} sanity</p>` : ''}
       <p class="hint">You hurry home before the fog notices you. Wait for dawn.</p>
+      ${watchBtn}
       ${statusCards(y)}`;
   }
+
+  const rollCard = (roll) => `<div class="rollcard ${roll.ok ? 'ok' : 'bad'}">🎲 ${roll.die} + ${roll.bonus} (${esc(roll.stat)}${roll.charm ? ' 🔹+2' : ''}) = <b>${roll.total}</b> vs ${roll.dc} — ${roll.ok ? 'SUCCESS' : 'FAILURE'}${roll.redrawn ? ' <small>(redrawn)</small>' : ''}</div>`;
 
   function phoneSpiritNight(v, y) {
     const ui = y.hauntUI;
@@ -444,11 +478,21 @@
 
   function phoneGameover(v, y) {
     const c = v.ceremony;
+    const bump = (stat, icon) => {
+      const cur = (y.bumps || {})[stat] || 0;
+      const capped = cur >= 2;
+      return `<button class="targetbtn ${(!y.xp || capped) ? 'disabled' : ''}" data-action="spendXp" data-stat="${stat}">${icon} +1 ${stat.toUpperCase()} <small>(now ${((y.stats || {})[stat] ?? '?')}${capped ? ' · maxed' : ''})</small></button>`;
+    };
     return `
       <h2>${c ? (['cult', 'oldone'].includes(c.winner) ? 'DOOM' : 'RESPITE') : 'THE END'}</h2>
       <p class="hint">The full ceremony plays on the TV.</p>
       ${y.objective ? `<div class="objcard ${y.objective.done ? 'done' : ''}">🗝 Your quest: ${esc(y.objective.text)} — ${y.objective.done ? 'DONE ✅ (+2✴)' : 'failed ❌'}</div>` : ''}
       <p class="signentry">Your Elder Signs: <b>${(v.players.find((p) => p.id === y.id) || {}).signs || 0}✴</b></p>
+      <div class="xppanel">
+        <h3>🧬 Experience — ${y.xp || 0} unspent</h3>
+        <p class="hint">What you survive makes you stranger. Spend between games; it lasts all evening.</p>
+        <div class="targets small">${bump('brawn', '💪')}${bump('wits', '🧠')}${bump('nerve', '🕯')}</div>
+      </div>
       ${y.personaChoices ? `<details><summary>Change persona for the next game</summary><div class="personagrid">${personaGrid(y)}</div></details>` : ''}`;
   }
 
@@ -509,6 +553,12 @@
       case 'gravedirt-mode': gravedirtMode = true; render(); break;
       case 'gravedirt-cancel': gravedirtMode = false; render(); break;
       case 'use-gravedirt': gravedirtMode = false; send({ type: 'useItem', item: 'gravedirt', target: btn.dataset.id }); break;
+      case 'watch-mode': watchMode = true; render(); break;
+      case 'watch-cancel': watchMode = false; render(); break;
+      case 'use-watch': watchMode = false; send({ type: 'useItem', item: 'watch', target: btn.dataset.id }); break;
+      case 'tarot-use': send({ type: 'tarot', use: true }); break;
+      case 'tarot-decline': send({ type: 'tarot', use: false }); break;
+      case 'spendXp': send({ type: 'spendXp', stat: btn.dataset.stat }); break;
       case 'rising': send({ type: 'risingPick', stat: btn.dataset.stat, spend: !!document.getElementById('spendItem')?.checked }); break;
     }
   });

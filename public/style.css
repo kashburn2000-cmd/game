@@ -170,6 +170,15 @@ body {
 .itemcard.gained { animation: cardin .6s ease; }
 .itemcard small { color: var(--parchment-dim); }
 .presscard { border: 1px solid var(--gold); border-radius: .6rem; padding: .7rem 1rem; margin: .6rem 0; font-size: .95rem; }
+.sightcard { border: 1px solid var(--glow); border-radius: .6rem; padding: .7rem 1rem; margin: .6rem 0; font-size: .95rem; color: var(--glow); }
+.rarecard { border: 1px solid var(--gold); color: var(--gold); text-align: center; letter-spacing: .18em; font-size: .85rem;
+  border-radius: .6rem; padding: .5rem; margin: .6rem 0; box-shadow: 0 0 18px rgba(212, 175, 55, .25); animation: cardin .6s ease; }
+.visiontext { color: var(--ghost); font-style: italic; margin: .4rem 0 .6rem; padding-left: .8rem; border-left: 2px solid var(--ghost); font-size: .92rem; }
+.scenetext.partial { opacity: .75; font-size: .92rem; }
+.unrest { display: block; color: var(--doom); font-size: .75rem; }
+.rareready { display: block; color: var(--gold); font-size: .75rem; }
+.xppanel { border: 1px solid #3a4a5a; border-radius: .7rem; padding: .8rem 1rem; margin: .8rem 0; }
+.xppanel h3 { margin-top: 0; color: var(--gold); }
 
 .personagrid { display: grid; grid-template-columns: 1fr 1fr; gap: .5rem; margin: .8rem 0; }
 .personabtn { font-family: inherit; text-align: left; background: #101820; color: var(--parchment); border: 1px solid #3a4a5a;

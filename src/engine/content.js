@@ -88,7 +88,29 @@ export const ITEMS = {
   flask: { id: 'flask', name: 'Whiskey Flask', icon: '🥃', desc: 'Drink to shrug off a haunting curse. Consumed.' },
   press: { id: 'press', name: 'Press Credentials', icon: '📰', desc: 'After a vote, privately see exactly who voted for whom. Once.' },
   gravedirt: { id: 'gravedirt', name: 'Grave Dirt', icon: '🪦', desc: 'The spirits owe you one. Choose who the next haunting strikes. Consumed.' },
+  seaglass: { id: 'seaglass', name: 'Sea-Glass Charm', icon: '🔹', desc: 'The next die you roll glows: +2. Automatic. Consumed.' },
+  tarot: { id: 'tarot', name: 'The Hanged Man', icon: '🎴', desc: 'When a die fails you, draw again — and take the new fate, whatever it is. Once.' },
+  salt: { id: 'salt', name: 'Ring of Salt', icon: '🧂', desc: 'The next haunting aimed at you breaks against your doorstep. Automatic. Consumed.' },
+  key: { id: 'key', name: 'Skeleton Key', icon: '🗝', desc: 'Somewhere in Arkham is a door this fits. It will know when you are near. Consumed.' },
+  watch: { id: 'watch', name: 'Dead Man’s Watch', icon: '⌚', desc: 'Use at night: follow one soul’s evening. At dawn, learn where they went — or that no record exists. Consumed.' },
 };
+
+// ---- Low-sanity visions: appended to exploration scenes at sanity <= 2 ----
+export const VISIONS = [
+  'Your hands, you notice, are wet. They have been wet all night.',
+  'Someone keeps pace with you a street over. When you stop, it stops. Almost.',
+  'The moon is on the wrong side of the sky. You decide not to mention this.',
+  'You can hear your heartbeat. It is very slightly out of rhythm with your pulse.',
+  'Every window you pass holds your reflection. One holds it a beat too long.',
+  'The fog smells like a house you grew up in. You never lived by the sea.',
+  'Somewhere behind you, your own voice asks you to wait up.',
+];
+
+// ---- Unrest: locations grow strange as checks fail there ----
+export const UNREST_LINES = [
+  (l) => `${l} has gone STRANGE. Locals now cross the street to avoid it. The street, locals report, also moved.`,
+  (l) => `The town agrees, without ever meeting: nobody goes near ${l} after dark now. The town keeps going anyway.`,
+];
 
 // ---- Exploration ----
 // Each scene: text, two choices. A choice either has a flat `outcome`, or a
@@ -101,7 +123,14 @@ export const LOCATIONS = {
       { id: 'ledger', text: 'The harbormaster’s shack is unlocked. His ledger lists cargo that only arrives on moonless nights, signed for in a script that hurts to read.',
         choices: [
           { label: 'Tear out the page', check: { stat: 'nerve', dc: 12 },
-            success: { item: 'press', sanity: 0, text: 'You pocket the page. Proof, of a kind. Your hands only shake a little.', tag: 'docks' },
+            success: { item: 'press', sanity: 0, text: 'You pocket the page. Proof, of a kind. Your hands only shake a little.', tag: 'docks',
+              next: { text: 'Boots on the boardwalk — two sets, unhurried, coming this way. The shack has one door and one window.',
+                choices: [
+                  { label: 'Hide and watch them', check: { stat: 'nerve', dc: 12 },
+                    success: { item: 'watch', sanity: -1, text: 'Two figures collect the ledger without a lantern, counting pages by touch. One checks a pocket watch and leaves it on the sill. You take it. It is still ticking. It is set to a thirteenth hour.', tag: 'docks' },
+                    fail: { sanity: -2, text: 'You hold your breath behind the door. They never enter. They stand outside for eleven minutes, waiting for you to breathe.', tag: 'docks' } },
+                  { label: 'Out the window, now', outcome: { sanity: 0, text: 'You leave through the window with the dignity of a man exiting a window. Behind you, the shack door opens for no one.', tag: 'docks' } },
+                ] } },
             fail: { sanity: -2, text: 'The script writhes as you tear it. You read one word by accident. You will not repeat it.', tag: 'docks' } },
           { label: 'Leave it and go', outcome: { sanity: 1, text: 'Some doors are better left shut. You walk home whistling, loudly, the whole way.', tag: 'docks' } },
         ] },
@@ -133,6 +162,14 @@ export const LOCATIONS = {
             fail: { sanity: -1, text: 'The song stops the moment you get close — and starts again from a different crate. Then two crates. Then all of them, in harmony.', tag: 'docks' } },
           { label: 'Shut the door firmly', outcome: { sanity: 1, text: 'Not every mystery deserves a witness. You wedge the door with a gaff hook and sleep the sleep of the sensibly incurious.', tag: 'docks' } },
         ] },
+      { id: 'thirdtide', rare: true, gate: 'visits',
+        text: 'Third night at the water, and the water has decided you may as well see. The tide pulls back past all reason — past the moorings, past the sandbar, laying bare the drowned first street of Old Arkham: cobbles, lamp posts, one door still on its hinges.',
+        choices: [
+          { label: 'Walk the drowned street', check: { stat: 'nerve', dc: 14 },
+            success: { item: 'watch', sanity: -1, text: 'The door opens on a parlor kept tidy for eighty years. On the mantle, a watch, still ticking, set to a thirteenth hour. You take it. Something, somewhere, approves of punctuality.', tag: 'docks' },
+            fail: { sanity: -3, text: 'You reach the lamp post before you understand the lamps are lit, and turn back before you understand for whom.', tag: 'docks' } },
+          { label: 'Watch from the seawall', outcome: { sanity: 1, text: 'You witness it from a respectful altitude, remove your hat, and let the sea keep its museum. The tide returns like a curtain.', tag: 'docks' } },
+        ] },
     ],
   },
   library: {
@@ -148,7 +185,14 @@ export const LOCATIONS = {
       { id: 'card', text: 'The card catalog has grown a new drawer overnight, labeled only with a spiral. The wood is wet.',
         choices: [
           { label: 'Open the drawer', check: { stat: 'nerve', dc: 12 },
-            success: { item: 'flask', sanity: 0, text: 'Inside: a flask of very good whiskey and a note — "You’ll want this. — The Management."', tag: 'library' },
+            success: { item: 'flask', sanity: 0, text: 'Inside: a flask of very good whiskey and a note — "You’ll want this. — The Management."', tag: 'library',
+              next: { text: 'Beneath the flask, the drawer keeps going — deeper than the cabinet, deeper than the wall. Far back, something small glints iron-grey.',
+                choices: [
+                  { label: 'Reach all the way in', check: { stat: 'nerve', dc: 13 },
+                    success: { item: 'key', sanity: -1, text: 'Your whole arm in a drawer that cannot hold it, fingers closing on cold iron: a key, tagged in library hand — "RESTRICTED. FITS MORE THAN ONE DOOR."', tag: 'library' },
+                    fail: { sanity: -2, text: 'At full stretch, something far inside the drawer very gently takes your measurements.', tag: 'library' } },
+                  { label: 'Withdraw with your arm', outcome: { sanity: 1, text: 'You close the drawer, wash your hands twice, and update your definition of furniture.', tag: 'library' } },
+                ] } },
             fail: { sanity: -1, text: 'The drawer is deeper than the cabinet. Considerably. You shut it before the smell of low tide gets out.', tag: 'library' } },
           { label: 'File a complaint', outcome: { sanity: 1, text: 'You leave a stern note for the librarian. Order must be maintained somewhere in this town.', tag: 'library' } },
         ] },
@@ -173,6 +217,14 @@ export const LOCATIONS = {
             fail: { sanity: -2, text: 'The last page of every book shows the same drawing: this library, this corner, tonight — and someone standing exactly where you stand.', tag: 'library' } },
           { label: 'Shelve them spine-in', outcome: { sanity: 1, text: 'You hide the lot behind the almanacs. The children of Arkham will grow up frightened of normal, wholesome things, as is right.', tag: 'library' } },
         ] },
+      { id: 'lockedcase', rare: true, gate: 'key',
+        text: 'The skeleton key grows warm in your pocket as you pass the display case that has never, in anyone’s memory, been open. The lock takes the key like a held breath. Inside: the founding charter of Arkham — two signatures. The mayor’s. And below it, in water damage the shape of a hand, the other party’s.',
+        choices: [
+          { label: 'Read the terms of the founding', check: { stat: 'wits', dc: 13 },
+            success: { item: 'tarot', sanity: -1, text: 'You read what the town agreed to, and what it pays, and when. Tucked in the binding: a single tarot card, left — the charter notes — "for whoever finally asks." You have questions. You now also have a spare fate.', tag: 'library' },
+            fail: { sanity: -2, text: 'The legal language is dense, circular, and — you realize on the third clause — being read back to you, aloud, from very far below.', tag: 'library' } },
+          { label: 'Lock it back up', outcome: { sanity: 1, text: 'Some contracts survive by never being read. You turn the key and let the town keep its terms.', tag: 'library' } },
+        ] },
     ],
   },
   graveyard: {
@@ -181,7 +233,14 @@ export const LOCATIONS = {
       { id: 'fresh', text: 'A grave has been dug that no one ordered. It is neat, professional work — and exactly your height.',
         choices: [
           { label: 'Fill it back in', check: { stat: 'brawn', dc: 11 },
-            success: { item: 'gravedirt', sanity: 1, text: 'You fill it in out of spite. You keep a pocketful of the dirt. The spirits appreciate a professional.', tag: 'graveyard' },
+            success: { item: 'gravedirt', sanity: 1, text: 'You fill it in out of spite. You keep a pocketful of the dirt. The spirits appreciate a professional.', tag: 'graveyard',
+              next: { text: 'Halfway done, your spade rings on wood. A box. Small, coffin-shaped, coffin-serious. It was not there when you started filling.',
+                choices: [
+                  { label: 'Pry it open', check: { stat: 'brawn', dc: 12 },
+                    success: { item: 'salt', sanity: 0, text: 'Inside: a mason jar of coarse grey salt, packed with care, labeled in a steady hand — "FOR THE DOOR. YOU’LL KNOW WHEN."', tag: 'graveyard' },
+                    fail: { sanity: -2, text: 'The lid gives a half inch, exhales the cold of a much larger room, and pulls itself back shut.', tag: 'graveyard' } },
+                  { label: 'Bury it deeper', outcome: { sanity: 1, text: 'Whatever mails itself to a grave can wait for the next delivery. You tamp it down flat and sleep fine, mostly.', tag: 'graveyard' } },
+                ] } },
             fail: { sanity: -1, text: 'The soil keeps sliding back out, politely, like the hole insists it is expecting someone.', tag: 'graveyard' } },
           { label: 'Measure it, nervously', outcome: { sanity: -1, text: 'Exactly your height. To the inch. You leave at a dignified sprint.', tag: 'graveyard' } },
         ] },
@@ -213,6 +272,16 @@ export const LOCATIONS = {
             fail: { sanity: -2, text: 'The humming stops. All of it. The silence has the specific texture of many people listening back.', tag: 'graveyard' } },
           { label: 'Hum along walking past', outcome: { sanity: 1, text: 'You harmonize, badly. The graves forgive you. Somewhere below, something taps time with what is hopefully a foot.', tag: 'graveyard' } },
         ] },
+      { id: 'stair', rare: true, gate: 'strange',
+        text: 'On strange nights the Marsh mausoleum does not bother pretending. The door stands wide. Inside, where a floor should be, a stair descends — swept clean, lamp-lit, and worn smooth by use. By use in both directions.',
+        choices: [
+          { label: 'Take three steps down', check: { stat: 'nerve', dc: 14 },
+            success: { item: 'salt', sanity: -1, text: 'On the third step: a poured ring of salt, a lantern, and a note — someone else’s precaution, abandoned mid-vigil. You inherit the salt and do not inquire after the sentry.', tag: 'graveyard' },
+            fail: { sanity: -3, text: 'On the third step you hear, from below, a stair creak — the fourth step. You have not taken the fourth step.', tag: 'graveyard' } },
+          { label: 'Brick the doorway', check: { stat: 'brawn', dc: 12 },
+            success: { sanity: 2, text: 'You wall it shut with headstone offcuts and half a bag of mortar the sexton will not miss. It won’t hold. It doesn’t need to hold. It needs to be RUDE.', tag: 'graveyard' },
+            fail: { sanity: -1, text: 'Every brick you lay is neatly unlaid behind you. Someone below values an open-door policy.', tag: 'graveyard' } },
+        ] },
     ],
   },
   roadhouse: {
@@ -221,7 +290,14 @@ export const LOCATIONS = {
       { id: 'backroom', text: 'The card game in the back room went quiet when you walked in. The pot in the middle of the table is not money.',
         choices: [
           { label: 'Ask to be dealt in', check: { stat: 'nerve', dc: 12 },
-            success: { item: 'flask', sanity: 0, text: 'You win a hand and a flask, and fold before you learn what the house always collects.', tag: 'roadhouse' },
+            success: { item: 'flask', sanity: 0, text: 'You win a hand and a flask, and fold before you learn what the house always collects.', tag: 'roadhouse',
+              next: { text: 'As you stand, the dealer slides one card toward you, face down. "House rule," he says. "Everyone leaves with a card."',
+                choices: [
+                  { label: 'Take the card', check: { stat: 'nerve', dc: 11 },
+                    success: { item: 'tarot', sanity: 0, text: 'The Hanged Man — upside down, or you are. "Good pull," the dealer says, with what would be envy in a man with different eyes.', tag: 'roadhouse' },
+                    fail: { sanity: -1, text: 'The card is blank. Both sides. It stays blank exactly as long as you keep looking at it.', tag: 'roadhouse' } },
+                  { label: 'Refuse politely', outcome: { sanity: 1, text: '"Suit yourself," the dealer says, and deals your card to the empty chair, which anteed.', tag: 'roadhouse' } },
+                ] } },
             fail: { sanity: -1, text: 'You lose the hand. They let you keep what you wagered, which somehow feels worse.', tag: 'roadhouse' } },
           { label: 'Order a drink instead', outcome: { sanity: 1, text: 'The bartender pours a double without being asked. Bartenders know. Bartenders always know.', tag: 'roadhouse' } },
         ] },
@@ -253,6 +329,14 @@ export const LOCATIONS = {
             fail: { sanity: -1, text: 'He turns to thank you. You did not know a face could be so profoundly the back of a head.', tag: 'roadhouse' } },
           { label: 'Respect the arrangement', outcome: { sanity: 1, text: 'You nod to him as one nods to a lighthouse: gratefully, and from a distance. He nods back without moving.', tag: 'roadhouse' } },
         ] },
+      { id: 'hibb', rare: true, gate: 'visits',
+        text: 'Third night running, and the Roadhouse finally decides you count as furniture. The door behind the bar stands open. In the office beyond, doing the books by candlelight, sits Hibb — THE Hibb, whom no living customer has ever seen — and he waves you in without looking up.',
+        choices: [
+          { label: 'Ask about the second ledger column', check: { stat: 'nerve', dc: 12 },
+            success: { item: 'seaglass', sanity: 0, text: '"Rent," Hibb says, "runs two ways here." He pays you for your discretion in advance: a disc of warm sea-glass. "House luck. Spend it on a bad night." You have several scheduled.', tag: 'roadhouse' },
+            fail: { sanity: -1, text: 'Hibb looks up. You apologize — to whom, you could not later swear — and are outside, mid-stride, three streets away.', tag: 'roadhouse' } },
+          { label: 'Just drink with him', outcome: { sanity: 2, text: 'You share two fingers of the good stuff in companionable silence while the candle burns without shortening. Best nightcap of your life. You will not find the door again.', tag: 'roadhouse' } },
+        ] },
     ],
   },
   church: {
@@ -272,10 +356,25 @@ export const LOCATIONS = {
             fail: { sanity: -2, text: 'You hum two notes. The choir stops. A single voice near your left ear finishes your phrase, correcting your pitch.', tag: 'church' } },
           { label: 'Leave before the sermon', outcome: { sanity: 1, text: 'You genuflect to nothing in particular and back out the door. Faith is knowing when a service is not for you.', tag: 'church' } },
         ] },
+      { id: 'altar', rare: true, gate: 'key',
+        text: 'The key knows the vestry door — it pulls your hand there. Behind the altar, under canvas gone stiff with years: the OLD altar. The one from before the Order renovated. It is face down. It was bolted face down.',
+        choices: [
+          { label: 'Lift the canvas and look', check: { stat: 'brawn', dc: 13 },
+            success: { item: 'amulet', sanity: -1, text: 'Carved into the altar’s hidden face: the true Elder Sign, and set into it, a stone charm on a chain — confiscated, catalogued, and kept where only the desperate would look. You are exactly that qualified.', tag: 'church' },
+            fail: { sanity: -2, text: 'The canvas lifts an inch and the candles go out in order, nearest first, like a congregation turning to look.', tag: 'church' } },
+          { label: 'Take the warden’s spare ledger instead', outcome: { item: 'press', sanity: 0, text: 'Beside the altar, the churchwarden’s duplicate ledger — births, deaths, and a third column with no heading. Insurance, of a kind. You take it.', tag: 'church' } },
+        ] },
       { id: 'window', text: 'The new stained-glass window depicts the harbor. In the glass, the congregation stands on the beach, facing the water. Tonight, several of the little glass figures are facing the town.',
         choices: [
           { label: 'Count the figures', check: { stat: 'wits', dc: 13 },
-            success: { item: 'press', sanity: -1, text: 'You count. You compare against the parish register in the vestry. The window is a census, and it is more current than the register.', tag: 'church' },
+            success: { item: 'press', sanity: -1, text: 'You count. You compare against the parish register in the vestry. The window is a census, and it is more current than the register.', tag: 'church',
+              next: { text: 'One pane sits loose in its lead — a thumb-sized figure of blue-green glass, facing the town. Facing, in fact, you.',
+                choices: [
+                  { label: 'Pocket the little figure', check: { stat: 'wits', dc: 12 },
+                    success: { item: 'seaglass', sanity: 0, text: 'It comes free with a click like a tooth. Sea-glass, warm as a held hand, humming faintly in the choir’s key. Lucky, probably. Probably lucky.', tag: 'church' },
+                    fail: { sanity: -1, text: 'The pane will not budge, and now every figure in the window is facing you, which is not how you left them.', tag: 'church' } },
+                  { label: 'Press it back into place', outcome: { sanity: 1, text: 'You seat the pane firmly and pull the curtain. The census can keep itself.', tag: 'church' } },
+                ] } },
             fail: { sanity: -2, text: 'You lose count at thirty because one of the figures is wearing your coat.', tag: 'church' } },
           { label: 'Draw the curtain', outcome: { sanity: 1, text: 'Some art is improved by not being looked at. The curtain rings screech agreement.', tag: 'church' } },
         ] },
@@ -301,9 +400,24 @@ export const LOCATIONS = {
       { id: 'nightlog', text: 'The night nurse’s log lies open at the desk. Every entry for the past week ends the same way: "All quiet. All accounted for. One extra."',
         choices: [
           { label: 'Take a headcount yourself', check: { stat: 'brawn', dc: 12 },
-            success: { item: 'flask', sanity: 0, text: 'You walk every ward, counting, ready for anything. The count comes out even — and on the last bed sits the night nurse’s medicinal brandy, abandoned mid-shift. Finders keepers.', tag: 'asylum' },
+            success: { item: 'flask', sanity: 0, text: 'You walk every ward, counting, ready for anything. The count comes out even — and on the last bed sits the night nurse’s medicinal brandy, abandoned mid-shift. Finders keepers.', tag: 'asylum',
+              next: { text: 'Tucked under the log book: a pawn ticket. "ONE (1) WATCH, DEAD MAN’S. UNCLAIMED." The pawnshop closed years ago. Its ticket window, someone has noted in the margin, did not.',
+                choices: [
+                  { label: 'Redeem the ticket tonight', check: { stat: 'nerve', dc: 12 },
+                    success: { item: 'watch', sanity: -1, text: 'The ticket window is lit. A drawer slides out with the watch, still warm. You do not see hands. You are billed, the receipt says, "in kind, later."', tag: 'asylum' },
+                    fail: { sanity: -1, text: 'The window is lit until you knock. You keep the ticket. The ticket, you notice on the walk home, now says TWO (2).', tag: 'asylum' } },
+                  { label: 'File the ticket away', outcome: { sanity: 1, text: 'Unclaimed it was, unclaimed it stays. Some inheritances are declined.', tag: 'asylum' } },
+                ] } },
             fail: { sanity: -2, text: 'You count twice. The first count is one high. The second is one low. Somewhere between the wards, the difference is moving.', tag: 'asylum' } },
           { label: 'Add "sounds fine" and leave', outcome: { sanity: 1, text: 'You initial the log like a professional. If the extra one wanted to be counted, it would hold still.', tag: 'asylum' } },
+        ] },
+      { id: 'director', rare: true, gate: 'strange',
+        text: 'On strange nights the third-floor corridor is longer, and at the end of it, the Director’s office is lit. The Annex has had no Director since 1902. The nameplate is freshly polished. The chair behind the desk is turning to greet you.',
+        choices: [
+          { label: 'Sit for the interview', check: { stat: 'nerve', dc: 14 },
+            success: { item: 'tarot', sanity: -1, text: 'The interview lasts either minutes or the winter. You answer honestly; it is that kind of room. At the end, the Director slides one card across the desk — "severance" — and the office is a supply closet, and always was.', tag: 'asylum' },
+            fail: { sanity: -3, text: 'You take the chair opposite. The chair opposite THAT also fills. You do not stay to learn who is interviewing whom.', tag: 'asylum' } },
+          { label: 'Decline the appointment', outcome: { sanity: 1, text: 'You leave a card with the night nurse: "Called. Will not call again." Some career opportunities are traps with stationery.', tag: 'asylum' } },
         ] },
     ],
   },

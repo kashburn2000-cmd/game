@@ -3,7 +3,7 @@
 // call handle()/tick(), then broadcast viewFor() to each connection and
 // persist serialize() output. All state is JSON-serializable.
 
-import { PERSONAS, ROLES, CURSES, WHISPERS, ITEMS, LOCATIONS, OBJECTIVES, NARRATION, TITLES, DOOM_LINES, INTERLUDES, RISING_ROUNDS } from './content.js';
+import { PERSONAS, ROLES, CURSES, WHISPERS, ITEMS, LOCATIONS, OBJECTIVES, NARRATION, TITLES, DOOM_LINES, INTERLUDES, RISING_ROUNDS, VISIONS, UNREST_LINES } from './content.js';
 
 const rand = (n) => Math.floor(Math.random() * n);
 const pick = (a) => a[rand(a.length)];
@@ -11,7 +11,7 @@ const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--
 const uid = () => Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
 const now = () => Date.now();
 
-export const TIMERS = { night: 150e3, dawn: 26e3, day: 180e3, vote: 90e3, reveal: 14e3, rising: 50e3 };
+export const TIMERS = { night: 180e3, dawn: 26e3, day: 180e3, vote: 90e3, reveal: 14e3, rising: 50e3 };
 const MAX_SANITY = 5, START_SANITY = 5, RESET_SANITY = 3, MAX_ITEMS = 3;
 const WHISPERS_PER_DAY = 3, WHISPER_GAP = 6e3;
 
@@ -56,6 +56,12 @@ export class Engine {
     g.deadline = TIMERS[phase] ? now() + TIMERS[phase] : null;
   }
   addSign(id, n) { const s = this.s.campaign.signs; s[id] = (s[id] || 0) + n; }
+  // Effective stats: persona base + campaign XP bumps.
+  pstats(p) {
+    const per = this.persona(p) || { brawn: 1, wits: 1, nerve: 1 };
+    const b = p?.statBumps || {};
+    return { brawn: per.brawn + (b.brawn || 0), wits: per.wits + (b.wits || 0), nerve: per.nerve + (b.nerve || 0) };
+  }
   loseSanity(id, n) {
     const g = this.g;
     if (!(id in g.sanity)) return;
@@ -88,6 +94,8 @@ export class Engine {
       case 'whisper': return this.whisper(pid, msg.index);
       case 'vote': return this.vote(pid, msg.target);
       case 'useItem': return this.useItem(pid, msg.item, msg.target);
+      case 'tarot': return this.tarotDraw(pid, !!msg.use);
+      case 'spendXp': return this.spendXp(pid, msg.stat);
       case 'risingPick': return this.risingPick(pid, msg.stat, !!msg.spend);
     }
   }
@@ -249,50 +257,160 @@ export class Engine {
     const role = this.role(pid);
     if (['cultist', 'medium', 'occultist', 'archivist'].includes(role)) return;
     if (!LOCATIONS[location]) return;
-    if (g.night.explores[pid]?.result) return; // already resolved tonight
-    const seen = (g.seenScenes[pid] = g.seenScenes[pid] || []);
-    let scenes = LOCATIONS[location].scenes.filter((s) => !seen.includes(location + ':' + s.id));
-    if (!scenes.length) scenes = LOCATIONS[location].scenes;
-    const scene = pick(scenes);
-    seen.push(location + ':' + scene.id);
-    g.night.explores[pid] = { loc: location, sceneId: scene.id, result: null };
+    if (g.night.explores[pid]) return; // committed for the night
     const st = g.stats[pid];
-    if (st && !st.locs.includes(location)) st.locs.push(location);
+    if (st) {
+      if (!st.locs.includes(location)) st.locs.push(location);
+      st.locCounts = st.locCounts || {};
+      st.locCounts[location] = (st.locCounts[location] || 0) + 1;
+    }
+    const seen = (g.seenScenes[pid] = g.seenScenes[pid] || []);
+    const all = LOCATIONS[location].scenes;
+    const unseen = (list) => list.filter((s) => !seen.includes(location + ':' + s.id));
+    // A rare scene opens the moment its gate is met — finding one is guaranteed, not lucky.
+    const rares = unseen(all.filter((s) => s.rare && this.rareOpen(pid, location, s.gate)));
+    let scene;
+    const ex = { loc: location, sceneId: null, rare: false, result: null };
+    if (rares.length) {
+      scene = rares[0];
+      ex.rare = true;
+      if (scene.gate === 'key') {
+        const items = g.items[pid] || [];
+        const ki = items.indexOf('key');
+        if (ki !== -1) items.splice(ki, 1); // the key stays in the lock
+      }
+      if (st) st.rareFound = true;
+    } else {
+      let scenes = unseen(all.filter((s) => !s.rare));
+      if (!scenes.length) scenes = all.filter((s) => !s.rare);
+      scene = pick(scenes);
+    }
+    seen.push(location + ':' + scene.id);
+    ex.sceneId = scene.id;
+    if ((g.sanity[pid] ?? MAX_SANITY) <= 2) ex.vision = pick(VISIONS);
+    g.night.explores[pid] = ex;
   }
+
+  // preview=true asks "would tonight's visit open it?" for the location picker.
+  rareOpen(pid, location, gate, preview = false) {
+    const g = this.g;
+    if (gate === 'key') return (g.items[pid] || []).includes('key');
+    if (gate === 'visits') return (g.stats[pid]?.locCounts?.[location] || 0) >= (preview ? 2 : 3);
+    if (gate === 'strange') return this.s.campaign.doom >= 5 || (this.s.campaign.unrest?.[location] || 0) >= 4;
+    return false;
+  }
+
+  currentScene(ex) { return LOCATIONS[ex.loc].scenes.find((s) => s.id === ex.sceneId); }
 
   exploreChoice(pid, index) {
     const g = this.g;
     if (!g || g.phase !== 'night') return;
     const ex = g.night.explores[pid];
-    if (!ex || ex.result) return;
-    const scene = LOCATIONS[ex.loc].scenes.find((s) => s.id === ex.sceneId);
-    const choice = scene.choices[index === 1 ? 1 : 0];
+    if (!ex || ex.result || ex.await) return;
+    const choices = ex.stage2 ? ex.stage2.choices : this.currentScene(ex).choices;
+    const choice = choices[index === 1 ? 1 : 0];
     if (!choice) return;
-    let outcome, roll = null;
     if (choice.check) {
-      const per = this.persona(this.player(pid)) || { brawn: 1, wits: 1, nerve: 1 };
-      const stat = per[choice.check.stat] || 0;
-      const die = 1 + rand(20);
-      const total = die + stat * 2;
-      const ok = total >= choice.check.dc;
-      roll = { die, stat: choice.check.stat, bonus: stat * 2, total, dc: choice.check.dc, ok };
-      outcome = ok ? choice.success : choice.fail;
+      const roll = this.rollCheck(pid, choice.check, ex.loc);
+      // The Hanged Man: on a failed roll, offer one redraw before fate lands.
+      if (!roll.ok && !ex.tarotUsed && (g.items[pid] || []).includes('tarot')) {
+        ex.await = { index, roll };
+        return;
+      }
+      this.applyExplore(pid, ex, choice, roll.ok ? choice.success : choice.fail, roll);
     } else {
-      outcome = choice.outcome;
+      this.applyExplore(pid, ex, choice, choice.outcome, null);
     }
-    ex.result = { text: outcome.text, roll, choiceLabel: choice.label, gained: null, sanity: outcome.sanity || 0, tag: outcome.tag };
+    this.checkNightDone();
+  }
+
+  rollCheck(pid, check, loc) {
+    const g = this.g;
+    const per = this.pstats(this.player(pid));
+    let bonus = (per[check.stat] || 0) * 2, charm = false;
+    const items = g.items[pid] || [];
+    const si = items.indexOf('seaglass');
+    if (si !== -1) { items.splice(si, 1); bonus += 2; charm = true; }
+    // Unrest stiffens a location's checks: +1 DC per 2 unrest, capped at +2.
+    const dc = check.dc + Math.min(2, Math.floor((this.s.campaign.unrest?.[loc] || 0) / 2));
+    const die = 1 + rand(20);
+    const total = die + bonus;
+    const ok = total >= dc;
+    if (!ok) this.bumpUnrest(loc);
+    return { die, stat: check.stat, bonus, total, dc, ok, charm };
+  }
+
+  bumpUnrest(loc) {
+    const c = this.s.campaign;
+    c.unrest = c.unrest || {};
+    const before = c.unrest[loc] || 0;
+    c.unrest[loc] = Math.min(6, before + 1);
+    if (before < 4 && c.unrest[loc] >= 4) {
+      const g = this.g;
+      if (g) { g.unrestNews = g.unrestNews || []; g.unrestNews.push(LOCATIONS[loc].name); }
+    }
+  }
+
+  applyExplore(pid, ex, choice, outcome, roll) {
+    const g = this.g;
     if (outcome.sanity) {
       if (outcome.sanity < 0) this.loseSanity(pid, -outcome.sanity);
       else g.sanity[pid] = Math.min(MAX_SANITY, g.sanity[pid] + outcome.sanity);
     }
+    let gained = null;
     if (outcome.item && (g.items[pid] || []).length < MAX_ITEMS) {
       g.items[pid].push(outcome.item);
-      ex.result.gained = outcome.item;
+      gained = outcome.item;
       const st = g.stats[pid];
-      if (st) { st.itemsFound++; }
+      if (st) st.itemsFound++;
       this.checkObjective(pid);
     }
+    if (outcome.next) {
+      // The scene deepens: stash this beat, present the follow-up.
+      ex.partial = { text: outcome.text, roll, gained };
+      ex.stage2 = { text: outcome.next.text, choices: outcome.next.choices };
+      return;
+    }
+    ex.result = { text: outcome.text, roll, choiceLabel: choice.label, gained, sanity: outcome.sanity || 0, tag: outcome.tag, partial: ex.partial || null };
+  }
+
+  tarotDraw(pid, use) {
+    const g = this.g;
+    if (!g || g.phase !== 'night') return;
+    const ex = g.night.explores[pid];
+    if (!ex || !ex.await) return;
+    const { index, roll } = ex.await;
+    const choices = ex.stage2 ? ex.stage2.choices : this.currentScene(ex).choices;
+    const choice = choices[index === 1 ? 1 : 0];
+    ex.await = null;
+    ex.tarotUsed = true;
+    let finalRoll = roll;
+    if (use) {
+      const items = g.items[pid] || [];
+      const ti = items.indexOf('tarot');
+      if (ti !== -1) {
+        items.splice(ti, 1);
+        const die = 1 + rand(20);
+        const total = die + roll.bonus;
+        finalRoll = { ...roll, die, total, ok: total >= roll.dc, redrawn: true };
+        const st = g.stats[pid];
+        if (st) st.usedItem = true;
+        this.checkObjective(pid);
+      }
+    }
+    this.applyExplore(pid, ex, choice, finalRoll.ok ? choice.success : choice.fail, finalRoll);
     this.checkNightDone();
+  }
+
+  spendXp(pid, stat) {
+    const p = this.player(pid);
+    if (!p || !['brawn', 'wits', 'nerve'].includes(stat)) return;
+    if (this.g && this.g.phase !== 'gameover') return;
+    if (!(p.xp > 0)) return;
+    p.statBumps = p.statBumps || {};
+    if ((p.statBumps[stat] || 0) >= 2) return; // +2 per stat is the ceiling
+    p.statBumps[stat] = (p.statBumps[stat] || 0) + 1;
+    p.xp--;
   }
 
   haunt(pid, target, curseId) {
@@ -320,6 +438,13 @@ export class Engine {
   resolveNight(forced) {
     const g = this.g;
     if (g.phase !== 'night') return;
+    // Finalize explorations cut short by the timer (mid-story or mid-tarot).
+    for (const ex of Object.values(g.night.explores)) {
+      if (ex && !ex.result && (ex.await || ex.stage2)) {
+        ex.await = null;
+        ex.result = { text: 'The night ran out before the tale finished. You hurry home with what you have.', roll: ex.partial?.roll || null, gained: null, sanity: 0, partial: ex.partial || null };
+      }
+    }
     const report = [];
     report.push(pick(NARRATION.nightFall)(g.day));
 
@@ -372,6 +497,32 @@ export class Engine {
       };
     }
 
+    // Dead Man's Watch: same record semantics as the Archivist, single-use.
+    if (g.night.watch) {
+      const w = g.night.watch;
+      const wex = g.night.explores[w.target];
+      g.lastWatch = { by: w.by, target: w.target, day: g.day, loc: wex?.result ? LOCATIONS[wex.loc].name : null };
+    }
+
+    // Fellow travelers: explorers who shared a location glimpse each other.
+    // At sanity <= 2, one face in the fog may be wrong (25%).
+    const byLoc = {};
+    for (const [xpid, ex] of Object.entries(g.night.explores)) {
+      if (ex?.result) (byLoc[ex.loc] = byLoc[ex.loc] || []).push(xpid);
+    }
+    g.sightings = {};
+    for (const [loc, folks] of Object.entries(byLoc)) {
+      if (folks.length < 2) continue;
+      for (const xpid of folks) {
+        let others = folks.filter((x) => x !== xpid);
+        if ((g.sanity[xpid] ?? MAX_SANITY) <= 2 && Math.random() < 0.25) {
+          const pool = g.alive.concat(g.spirits).filter((x) => x !== xpid && !others.includes(x));
+          if (pool.length) others = [...others.slice(1), pick(pool)];
+        }
+        g.sightings[xpid] = { loc: LOCATIONS[loc].name, others: others.map((x) => this.pname(x)) };
+      }
+    }
+
     // Haunting (spirits from the start of night vote; grave dirt overrides).
     const hauntVotes = Object.values(g.night.haunts);
     let hauntTarget = null, hauntCurse = null;
@@ -391,12 +542,20 @@ export class Engine {
       }
     }
     if (hauntTarget && hauntCurse) {
-      g.curse[hauntTarget] = { curseId: hauntCurse, broken: false };
-      const ctext = CURSES.find((c) => c.id === hauntCurse).text;
-      report.push(pick(NARRATION.haunt)(this.pname(hauntTarget), ctext.toLowerCase() + '.'));
-      this.loseSanity(hauntTarget, 1);
-      const st = g.stats[hauntTarget]; if (st) st.hauntedCount++;
-      this.fx('haunt');
+      const titems = g.items[hauntTarget] || [];
+      const saltIdx = titems.indexOf('salt');
+      if (saltIdx !== -1) {
+        titems.splice(saltIdx, 1);
+        report.push(`The spirits went for ${this.pname(hauntTarget)} — and found a ring of salt, laid neat and white across the doorstep. The curse broke on it like weather. The dead respect the classics.`);
+        this.fx('haunt');
+      } else {
+        g.curse[hauntTarget] = { curseId: hauntCurse, broken: false };
+        const ctext = CURSES.find((c) => c.id === hauntCurse).text;
+        report.push(pick(NARRATION.haunt)(this.pname(hauntTarget), ctext.toLowerCase() + '.'));
+        this.loseSanity(hauntTarget, 1);
+        const st = g.stats[hauntTarget]; if (st) st.hauntedCount++;
+        this.fx('haunt');
+      }
     }
 
     // Madness quirks for anyone at zero sanity.
@@ -418,6 +577,11 @@ export class Engine {
     Object.values(g.night.explores).forEach((ex) => { if (ex?.result) locCounts[ex.loc] = (locCounts[ex.loc] || 0) + 1; });
     const busiest = Object.keys(locCounts).sort((a, b) => locCounts[b] - locCounts[a])[0];
     if (busiest) report.push(pick(NARRATION.flavor[busiest]));
+
+    if (g.unrestNews?.length) {
+      for (const name of g.unrestNews) report.push(pick(UNREST_LINES)(name));
+      g.unrestNews = [];
+    }
 
     report.push(pick(NARRATION.advertiser));
 
@@ -485,6 +649,9 @@ export class Engine {
     } else if (item === 'press' && g.lastTally) {
       g.pressReveals = g.pressReveals || {};
       g.pressReveals[pid] = g.lastTally;
+      used = true;
+    } else if (item === 'watch' && g.phase === 'night' && this.alive(pid) && this.alive(target) && target !== pid && !g.night.watch) {
+      g.night.watch = { by: pid, target };
       used = true;
     }
     if (used) {
@@ -661,6 +828,19 @@ export class Engine {
     const t6 = byStat((s) => s.sanityLost || 0, 3);
     if (t6) titles.push({ title: 'Most Fragile Mind', who: t6, note: 'lost the most sanity' });
 
+    // Experience for the campaign: survive, quest, win, rare discovery.
+    const xpRows = [];
+    for (const p of this.s.players) {
+      if (!this.role(p.id)) continue;
+      let gain = 0;
+      if (this.alive(p.id)) gain++;
+      if (g.objectives[p.id]?.done) gain++;
+      if (winners.includes(p.id)) gain++;
+      if (g.stats[p.id]?.rareFound) gain++;
+      if (gain) p.xp = (p.xp || 0) + gain;
+      xpRows.push({ id: p.id, gained: gain, total: p.xp || 0 });
+    }
+
     const lineFn =
       winner === 'cult' ? pick(NARRATION.cultWin) :
       winner === 'town' ? pick(NARRATION.townWin) :
@@ -676,6 +856,7 @@ export class Engine {
       roles: this.s.players.filter((p) => this.role(p.id)).map((p) => ({ id: p.id, role: this.role(p.id) })),
       titles,
       objectives: this.s.players.map((p) => ({ id: p.id, obj: g.objectives[p.id] || null })),
+      xp: xpRows,
       doom: camp.doom,
       signs: { ...camp.signs },
     };
@@ -719,7 +900,7 @@ export class Engine {
     r.lastRolls = [];
     for (const id of r.participants) {
       const pickd = r.picks[id] || { stat: 'nerve', spend: false };
-      const per = this.persona(this.player(id)) || { brawn: 1, wits: 1, nerve: 1 };
+      const per = this.pstats(this.player(id));
       let bonus = (per[pickd.stat] || 0) * 2;
       if (pickd.spend && (g.items[id] || []).length) { g.items[id].pop(); bonus += 3; }
       const die = 1 + rand(20);
@@ -810,6 +991,7 @@ export class Engine {
       roles: c.roles.map((r) => ({ ...r, name: this.pname(r.id), roleInfo: ROLES[r.role] })),
       titles: c.titles.map((t) => ({ ...t, name: this.pname(t.who) })),
       objectives: c.objectives.map((o) => ({ name: this.pname(o.id), obj: o.obj ? { text: OBJECTIVES.find((x) => x.id === o.obj.id)?.text, done: o.obj.done } : null })),
+      xp: (c.xp || []).map((x) => ({ ...x, name: this.pname(x.id) })),
       log: this.s.campaign.log,
     };
   }
@@ -863,13 +1045,31 @@ export class Engine {
         };
       } else {
         const ex = g.night.explores[pid];
-        you.nightUI = { kind: 'explore' };
+        you.nightUI = { kind: 'explore', hasWatch: (g.items[pid] || []).includes('watch') && !g.night.watch };
         if (!ex) {
-          you.nightUI.locations = Object.entries(LOCATIONS).map(([id, l]) => ({ id, name: l.name, icon: l.icon }));
+          you.nightUI.locations = Object.entries(LOCATIONS).map(([id, l]) => ({
+            id, name: l.name, icon: l.icon,
+            unrest: Math.min(6, this.s.campaign.unrest?.[id] || 0),
+            rareReady: l.scenes.some((s) => s.rare && !(g.seenScenes[pid] || []).includes(id + ':' + s.id) && this.rareOpen(pid, id, s.gate, true)),
+          }));
         } else {
-          const scene = LOCATIONS[ex.loc].scenes.find((s) => s.id === ex.sceneId);
-          you.nightUI.scene = { loc: LOCATIONS[ex.loc].name, text: scene.text, choices: scene.choices.map((c) => ({ label: c.label, check: c.check || null })) };
-          you.nightUI.result = ex.result ? { ...ex.result, gained: ex.result.gained ? ITEMS[ex.result.gained] : null } : null;
+          const scene = this.currentScene(ex);
+          const choices = ex.stage2 ? ex.stage2.choices : scene.choices;
+          you.nightUI.scene = {
+            loc: LOCATIONS[ex.loc].name,
+            rare: !!ex.rare,
+            text: ex.stage2 ? ex.stage2.text : scene.text,
+            vision: ex.stage2 ? null : ex.vision || null,
+            deeper: !!ex.stage2,
+            partial: ex.partial ? { ...ex.partial, gained: ex.partial.gained ? ITEMS[ex.partial.gained] : null } : null,
+            choices: choices.map((c) => ({ label: c.label, check: c.check || null })),
+          };
+          you.nightUI.await = ex.await ? { roll: ex.await.roll } : null;
+          you.nightUI.result = ex.result ? {
+            ...ex.result,
+            gained: ex.result.gained ? ITEMS[ex.result.gained] : null,
+            partial: ex.result.partial ? { ...ex.result.partial, gained: ex.result.partial.gained ? ITEMS[ex.result.partial.gained] : null } : null,
+          } : null;
         }
       }
     }
@@ -891,10 +1091,21 @@ export class Engine {
     if (role === 'archivist' && g.lastArchive?.by === pid) {
       you.archive = { name: this.pname(g.lastArchive.target), loc: g.lastArchive.loc, day: g.lastArchive.day };
     }
-    if (g.phase === 'rising' && g.rising.participants.includes(pid)) {
-      you.risingUI = { picked: !!g.rising.picks[pid], stats: this.persona(p) || { brawn: 1, wits: 1, nerve: 1 }, canSpend: (g.items[pid] || []).length > 0, round: g.rising.round, rounds: g.rising.rounds };
+    if (g.lastWatch?.by === pid) {
+      you.watch = { name: this.pname(g.lastWatch.target), loc: g.lastWatch.loc, day: g.lastWatch.day };
     }
-    if (g.phase === 'gameover') v.ceremony = this.ceremonyView();
+    if (g.sightings?.[pid] && g.phase !== 'night') {
+      you.sighting = g.sightings[pid];
+    }
+    you.stats = this.pstats(p);
+    if (g.phase === 'rising' && g.rising.participants.includes(pid)) {
+      you.risingUI = { picked: !!g.rising.picks[pid], stats: this.pstats(p), canSpend: (g.items[pid] || []).length > 0, round: g.rising.round, rounds: g.rising.rounds };
+    }
+    if (g.phase === 'gameover') {
+      v.ceremony = this.ceremonyView();
+      you.xp = p.xp || 0;
+      you.bumps = p.statBumps || {};
+    }
     if (you.host) {
       you.hostUI = {
         canStart: !g || g.phase === 'gameover',
