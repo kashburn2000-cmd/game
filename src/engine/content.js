@@ -625,6 +625,44 @@ export const RISING_ROUNDS = [
   `The final scene. The tattered mantle fills the sky above the Palace. Whatever you have left, Castaigne — spend it before the bow.`,
 ];
 
+// ---- Name-keyed easter eggs ----
+// If a player joins with one of these real names, the game quietly knows.
+// Each surface fires AT MOST ONCE per evening: a spirit whisper option, a
+// Courier notice at dawn, and a personal line when they explore the Palace.
+// Edit freely — this is the place to hide inside jokes.
+export const NAME_EGGS = {
+  brenda: {
+    whisper: 'The seat beside Brenda has been reserved for years.',
+    courier: 'PERSONAL — The Courier reminds BRENDA that her complimentary subscription continues whether or not she recalls subscribing.',
+    scene: 'On the seat beside you lies tonight’s program. Nobody printed a program. The cast list is one name long: BRENDA.',
+  },
+  alex: {
+    whisper: 'Alex has read further than they say. Ask Alex.',
+    courier: 'NOTICE — Will ALEX please call at the box office to collect a personal item. The box office declines to describe the item. It is breathing.',
+    scene: 'Chalked on the dressing-room mirror, in a neat, patient hand: "ALEX — HALF-HOUR CALL."',
+  },
+  jason: {
+    whisper: 'They have been practicing saying "Jason."',
+    courier: 'CORRECTION — In yesterday’s edition the Courier misspelled the name JASON. The Courier has never printed the name Jason. The Courier apologizes for tomorrow.',
+    scene: 'The promptbook lies open on the stage manager’s desk. In the margin of the second act, in fresh ink: "enter JASON, unwilling."',
+  },
+  annie: {
+    whisper: 'Annie hears this one twice.',
+    courier: 'SOCIETY — The Ladies’ Auxiliary thanks ANNIE for her generous donation, which arrived Tuesday, postmarked next month.',
+    scene: 'A brass plaque gleams on the best seat in the house: "PATRON — ANNIE. IN PERPETUITY." The other plaques are green with age.',
+  },
+  matt: {
+    whisper: 'The understudy list is one name long. Matt knows.',
+    courier: 'LOST & FOUND — one umbrella, one pocketknife, one hour, belonging to MATT. Owner may reclaim any two.',
+    scene: 'Pinned to the callboard, an understudy sheet for a role with no name. The single entry, typed: MATT.',
+  },
+  kevin: {
+    whisper: 'Kevin invited you all here. Ask him why.',
+    courier: 'PUBLIC RECORD — the Palace’s reopening permit is countersigned by one K——N of this parish. The clerk cannot finish reading the signature.',
+    scene: 'In the manager’s office, the contract for tonight’s engagement. The producer’s line is signed in a hand you know intimately: your own. KEVIN.',
+  },
+};
+
 export const TITLES = [
   { id: 'paranoid', name: 'Most Paranoid', desc: 'voted against the most innocents' },
   { id: 'silvertongue', name: 'Silver Tongue', desc: 'survived longest among the Masked' },

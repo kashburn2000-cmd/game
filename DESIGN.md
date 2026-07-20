@@ -207,6 +207,21 @@ Additional narrative systems layered on top:
   role reveals, dead silence just before them.
 - Phones: vibration when it's your turn to act at night.
 
+## Party-night presentation
+
+- **QR join:** the TV lobby shows a QR code (self-contained encoder, no
+  external services) that opens the site with the room code prefilled.
+- **Rotating cast card:** the lobby cycles through the role deck so
+  newcomers absorb the rules while people join.
+- **The Courier front page:** the game-over ceremony renders as a full
+  newspaper — headline by winner, the ending as the lead story, the
+  interlude, roles as "Arrests & Departures", titles as "Society Notes",
+  quests as "Classifieds", XP as "Education Notes", doom as the weather.
+- **Name easter eggs** (see NAME_EGGS in content.js — edit freely): if a
+  player joins under a recognized real name, the game quietly knows —
+  one personal spirit whisper, one Courier notice, and one line when they
+  explore the Palace. Each fires at most once per evening.
+
 ## Practical party requirements
 
 - Phones reconnect to their seat automatically after locking / WiFi drops.

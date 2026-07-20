@@ -82,6 +82,7 @@
       el.textContent = `${m}:${String(s).padStart(2, '0')}`;
       if (role === 'tv' && window.SoundKit) SoundKit.heartbeat(view?.phase === 'vote' && rem > 0 && rem < 25000);
     });
+    if (role === 'tv') updateCastRot(false);
   }, 400);
 
   // ---------- shared bits ----------
@@ -146,10 +147,16 @@
         body = `
           <h1 class="gametitle">STRANGE IS THE NIGHT</h1>
           <p class="tagline">a parlor tragedy of the Yellow Sign for 4–12 souls · best with 6–8</p>
-          <div class="joinbox">On your phone, visit <b>${esc(location.host)}</b> → <i>Join a game</i> → code
-            <div class="roomcode">${esc(v.code)}</div>
+          <div class="joinrow">
+            <div class="joinbox">Point a phone camera here —<br>
+              <canvas id="qrc" class="qr" width="264" height="264"></canvas>
+            </div>
+            <div class="joinbox">— or visit <b>${esc(location.host)}</b> → <i>Join a game</i> → code
+              <div class="roomcode">${esc(v.code)}</div>
+            </div>
           </div>
           ${playerStrip}
+          <div id="castrot" class="castrot"></div>
           ${v.games > 0 ? doomTrack(v.doom) + signsBoard(v) : ''}
           ${v.doomLine ? `<p class="narr">${esc(v.doomLine)}</p>` : ''}
           <p class="hint">${v.players.length < 4 ? 'Waiting for at least 4 souls…' : 'The host’s phone bears the ⭐ — they may deal the roles.'}</p>`;
@@ -227,27 +234,42 @@
       }
       case 'gameover': {
         const c = v.ceremony || {};
+        const HEADLINES = {
+          town: 'MASKED RING BROKEN; TOWN ENDURES',
+          cult: 'SECOND ACT TO PROCEED AS SCHEDULED',
+          lunatic: 'LOCAL RESIDENT ACHIEVES MAJORITY DECISION, DELIGHTED',
+          dawn: 'PERFORMANCE CANCELLED; TOWN TAKES BOW',
+          oldone: 'A TRIUMPH — THE TOWN JOINS THE CAST',
+        };
         body = `
           <div class="scene gameover ${['cult', 'oldone'].includes(c.winner) ? 'doomed' : 'saved'}">
-            <p class="narr endline">${esc(c.line || '')}</p>
-            <div class="cols">
-              <div class="col">
-                <h3>THE TRUTH</h3>
-                ${(c.roles || []).map((r) => `<p class="truthrow">${r.roleInfo.icon} <b>${esc(r.name)}</b> — ${esc(r.roleInfo.name)}</p>`).join('')}
-              </div>
-              <div class="col">
-                <h3>HONORS</h3>
-                ${(c.titles || []).map((t) => `<p class="titlerow">🏅 <b>${esc(t.title)}</b>: ${esc(t.name)} <i>(${esc(t.note)})</i></p>`).join('') || '<p class="hint">No honors earned. Shameful.</p>'}
-                <h3>SECRET QUESTS</h3>
-                ${(c.objectives || []).filter((o) => o.obj).map((o) => `<p class="objrow">${o.obj.done ? '✅' : '❌'} ${esc(o.name)}: <i>${esc(o.obj.text)}</i></p>`).join('')}
-                <h3>EXPERIENCE</h3>
-                ${(c.xp || []).filter((x) => x.gained > 0).map((x) => `<p class="objrow">🧬 ${esc(x.name)} +${x.gained} <i>(${x.total} banked)</i></p>`).join('') || '<p class="hint">The town learned nothing. Typical.</p>'}
+            <div class="courier">
+              <div class="c-mast">The Castaigne Courier</div>
+              <div class="c-date">VOL. XXXI · No. ${(v.games || 0) + 13} &nbsp;—&nbsp; CASTAIGNE, MORNING EDITION &nbsp;—&nbsp; PRICE ONE NICKEL</div>
+              <h1 class="c-head">${esc(HEADLINES[c.winner] || 'NIGHT PASSES; TOWN UNSURE')}</h1>
+              <div class="c-cols">
+                <div class="c-col c-lead">
+                  <p>${esc(c.line || '')}</p>
+                  ${c.interlude ? `<p class="c-inter">${esc(c.interlude)}</p>` : ''}
+                  <div class="c-sec">WEATHER</div>
+                  <p class="c-small">${esc(c.doomLine || 'Mist.')}</p>
+                </div>
+                <div class="c-col">
+                  <div class="c-sec">ARRESTS &amp; DEPARTURES</div>
+                  ${(c.roles || []).map((r) => `<p class="c-small">${r.roleInfo.icon} <b>${esc(r.name)}</b> — revealed as ${esc(r.roleInfo.name)}</p>`).join('')}
+                </div>
+                <div class="c-col">
+                  <div class="c-sec">SOCIETY NOTES</div>
+                  ${(c.titles || []).map((t) => `<p class="c-small">🏅 <b>${esc(t.title)}</b>: ${esc(t.name)}, ${esc(t.note)}.</p>`).join('') || '<p class="c-small">No honors earned. Shameful.</p>'}
+                  <div class="c-sec">CLASSIFIEDS</div>
+                  ${(c.objectives || []).filter((o) => o.obj).map((o) => `<p class="c-small">${o.obj.done ? '✓' : '✗'} ${esc(o.name)}: <i>${esc(o.obj.text)}</i></p>`).join('')}
+                  <div class="c-sec">EDUCATION NOTES</div>
+                  ${(c.xp || []).filter((x) => x.gained > 0).map((x) => `<p class="c-small">🧬 ${esc(x.name)} grew stranger (+${x.gained} XP, ${x.total} banked)</p>`).join('') || '<p class="c-small">The town learned nothing. Typical.</p>'}
+                </div>
               </div>
             </div>
             ${doomTrack(c.doom ?? v.doom)}
-            ${c.doomLine ? `<p class="narr">${esc(c.doomLine)}</p>` : ''}
             ${signsBoard(v)}
-            ${c.interlude ? `<div class="parchment interlude"><p>${esc(c.interlude)}</p></div>` : ''}
             <p class="hint">The host may deal the next game from their phone. The lake is patient.</p>
           </div>`;
         break;
@@ -383,11 +405,13 @@
           <button class="targetbtn abstain" data-action="tarot-decline">Accept what the die said</button>
         </div>`;
     }
+    const eggLine = ui.scene.egg ? `<p class="eggtext">${esc(ui.scene.egg)}</p>` : '';
     if (!ui.result) {
       return `
         <h2>${esc(ui.scene.loc).toUpperCase()}</h2>${rareBanner}
         ${ui.scene.deeper ? partialBlock(ui.scene.partial) + `<p class="hint">— the night is not done with you —</p>` : ''}
         <p class="scenetext">${esc(ui.scene.text)}</p>
+        ${eggLine}
         ${ui.scene.vision ? `<p class="visiontext">${esc(ui.scene.vision)}</p>` : ''}
         <div class="targets">${ui.scene.choices.map((c, i) => `<button class="targetbtn" data-action="explore-choice" data-i="${i}">${esc(c.label)}${c.check ? ` <small>(${c.check.stat} check, ${c.check.dc}+)</small>` : ''}</button>`).join('')}</div>
         ${watchBtn}`;
@@ -398,6 +422,7 @@
       ${partialBlock(r.partial)}
       ${r.roll ? rollCard(r.roll) : ''}
       <p class="scenetext">${esc(r.text)}</p>
+      ${eggLine}
       ${r.gained ? `<div class="itemcard gained">${r.gained.icon} You found: <b>${esc(r.gained.name)}</b></div>` : ''}
       ${r.sanity ? `<p class="hint">${r.sanity > 0 ? '+' : ''}${r.sanity} sanity</p>` : ''}
       <p class="hint">You hurry home before the fog notices you. Wait for dawn.</p>
@@ -521,9 +546,43 @@
 
   // ---------- render dispatch ----------
   function render() {
-    if (screen === 'landing') return renderLanding();
+    if (screen === 'landing') { renderLanding(); applyHashJoin(); return; }
     if (!view) { app.innerHTML = `<div class="phone"><p class="hint">Reaching Castaigne…</p></div>`; return; }
     if (role === 'tv') renderTV(view); else renderPhone(view);
+    const qc = document.getElementById('qrc');
+    if (qc && window.TinyQR) {
+      try { TinyQR.draw(qc, `${location.origin}/#join-${view.code}`); } catch { }
+    }
+    updateCastRot(true);
+  }
+
+  // QR links land here: #join-CODE prefills the join form.
+  function applyHashJoin() {
+    const m = location.hash.match(/^#join-([A-Za-z0-9]{3,8})$/);
+    if (!m) return;
+    const form = document.getElementById('joinform');
+    if (form) form.classList.remove('hidden');
+    const jc = document.getElementById('jcode');
+    if (jc) jc.value = m[1].toUpperCase();
+    const jn = document.getElementById('jname');
+    if (jn && !jn.value) jn.focus();
+  }
+
+  // The lobby's rotating role card.
+  let lastCastIdx = -1;
+  function updateCastRot(force) {
+    const el = document.getElementById('castrot');
+    if (!el || !view?.cast?.length) return;
+    const idx = Math.floor(Date.now() / 6000) % view.cast.length;
+    if (!force && idx === lastCastIdx) return;
+    lastCastIdx = idx;
+    const r = view.cast[idx];
+    el.innerHTML = `
+      <div class="castrotcard team-${r.team}">
+        <span class="castroticon">${r.icon}</span>
+        <span class="castrotname">${esc(r.name).toUpperCase()}</span>
+        <span class="castrotdesc">${esc(r.desc)}</span>
+      </div>`;
   }
 
   // ---------- events ----------

@@ -3,7 +3,7 @@
 // call handle()/tick(), then broadcast viewFor() to each connection and
 // persist serialize() output. All state is JSON-serializable.
 
-import { PERSONAS, ROLES, CURSES, WHISPERS, ITEMS, LOCATIONS, OBJECTIVES, NARRATION, TITLES, DOOM_LINES, INTERLUDES, RISING_ROUNDS, VISIONS, UNREST_LINES } from './content.js';
+import { PERSONAS, ROLES, CURSES, WHISPERS, ITEMS, LOCATIONS, OBJECTIVES, NARRATION, TITLES, DOOM_LINES, INTERLUDES, RISING_ROUNDS, VISIONS, UNREST_LINES, NAME_EGGS } from './content.js';
 
 const rand = (n) => Math.floor(Math.random() * n);
 const pick = (a) => a[rand(a.length)];
@@ -125,6 +125,9 @@ export class Engine {
     if (this.s.players.length >= 12) return;
     const name = String(msg.name || '').trim().slice(0, 18) || 'Stranger';
     const p = { id: uid(), token: uid(), name, personaId: null, joinOrder: this.s.joinSeq++, connected: true };
+    // The game quietly recognizes certain names.
+    const eggKey = name.toLowerCase();
+    if (NAME_EGGS[eggKey]) p.egg = eggKey;
     // Auto-claim a free persona so narration always has a name.
     const claimed = new Set(this.s.players.map((x) => x.personaId));
     const free = PERSONAS.filter((x) => !claimed.has(x.id));
@@ -288,6 +291,16 @@ export class Engine {
     seen.push(location + ':' + scene.id);
     ex.sceneId = scene.id;
     if ((g.sanity[pid] ?? MAX_SANITY) <= 2) ex.vision = pick(VISIONS);
+    // The Palace knows some visitors by name. Once per evening.
+    const player = this.player(pid);
+    if (location === 'church' && player?.egg) {
+      const camp = this.s.campaign;
+      camp.eggSceneUsed = camp.eggSceneUsed || {};
+      if (!camp.eggSceneUsed[player.egg]) {
+        camp.eggSceneUsed[player.egg] = true;
+        ex.egg = NAME_EGGS[player.egg].scene;
+      }
+    }
     g.night.explores[pid] = ex;
   }
 
@@ -583,7 +596,17 @@ export class Engine {
       g.unrestNews = [];
     }
 
-    report.push(pick(NARRATION.advertiser));
+    // The Courier's daily notice — sometimes it prints something personal.
+    const camp = this.s.campaign;
+    camp.eggCourierUsed = camp.eggCourierUsed || {};
+    const eggCandidates = this.s.players.filter((p) => p.egg && this.role(p.id) && !camp.eggCourierUsed[p.egg]);
+    if (eggCandidates.length && Math.random() < 0.35) {
+      const chosen = pick(eggCandidates);
+      camp.eggCourierUsed[chosen.egg] = true;
+      report.push(NAME_EGGS[chosen.egg].courier);
+    } else {
+      report.push(pick(NARRATION.advertiser));
+    }
 
     // Cultists survive another day (for Silver Tongue).
     this.livingCultists().forEach((id) => { g.stats[id].daysSurvivedCultist++; });
@@ -618,16 +641,35 @@ export class Engine {
     c.broken = broken;
   }
 
+  // Spirit whisper options: the curated list, plus one personal line for
+  // each living player the game recognizes (fires once per evening each).
+  whisperOptions() {
+    const camp = this.s.campaign;
+    camp.eggWhisperUsed = camp.eggWhisperUsed || {};
+    const eggs = this.s.players
+      .filter((p) => p.egg && !camp.eggWhisperUsed[p.egg] && this.alive(p.id))
+      .sort((a, b) => a.joinOrder - b.joinOrder)
+      .map((p) => NAME_EGGS[p.egg].whisper);
+    return WHISPERS.concat(eggs);
+  }
+
   whisper(pid, index) {
     const g = this.g;
     if (!g || !['day', 'vote'].includes(g.phase) || !this.spirit(pid)) return;
-    if (typeof WHISPERS[index] !== 'string') return;
+    const options = this.whisperOptions();
+    if (typeof options[index] !== 'string') return;
     const used = g.whispersUsed[pid] || 0;
     if (used >= WHISPERS_PER_DAY) return;
     if (now() - g.lastWhisperAt < WHISPER_GAP) return;
+    const text = options[index];
+    if (index >= WHISPERS.length) {
+      // A personal whisper: it fires once per evening, then is gone.
+      const owner = this.s.players.find((p) => p.egg && NAME_EGGS[p.egg].whisper === text);
+      if (owner) this.s.campaign.eggWhisperUsed[owner.egg] = true;
+    }
     g.whispersUsed[pid] = used + 1;
     g.lastWhisperAt = now();
-    g.whispersFeed.push({ text: WHISPERS[index], at: now() });
+    g.whispersFeed.push({ text, at: now() });
     if (g.whispersFeed.length > 6) g.whispersFeed.shift();
     const st = g.stats[pid]; if (st) st.whispers++;
     this.fx('whisper');
@@ -960,6 +1002,10 @@ export class Engine {
 
   tvView(v) {
     const g = this.g;
+    if (!g || g.phase === 'gameover') {
+      // Lobby / between games: the TV cycles the role deck for newcomers.
+      v.cast = Object.values(ROLES).map((r) => ({ name: r.name, icon: r.icon, desc: r.desc, team: r.team }));
+    }
     if (!g) return v;
     if (g.phase === 'night') {
       let waiting = 0;
@@ -1059,6 +1105,7 @@ export class Engine {
             loc: LOCATIONS[ex.loc].name,
             rare: !!ex.rare,
             text: ex.stage2 ? ex.stage2.text : scene.text,
+            egg: ex.egg || null,
             vision: ex.stage2 ? null : ex.vision || null,
             deeper: !!ex.stage2,
             partial: ex.partial ? { ...ex.partial, gained: ex.partial.gained ? ITEMS[ex.partial.gained] : null } : null,
@@ -1083,7 +1130,7 @@ export class Engine {
     }
     if ((g.phase === 'day' || g.phase === 'vote') && you.spirit) {
       const used = g.whispersUsed[pid] || 0;
-      you.whisperUI = { remaining: Math.max(0, WHISPERS_PER_DAY - used), options: WHISPERS, coolingDown: now() - g.lastWhisperAt < WHISPER_GAP };
+      you.whisperUI = { remaining: Math.max(0, WHISPERS_PER_DAY - used), options: this.whisperOptions(), coolingDown: now() - g.lastWhisperAt < WHISPER_GAP };
     }
     if (g.phase === 'vote' && you.alive) {
       you.voteUI = { submitted: !!g.votes[pid], choice: g.votes[pid] || null, targets: g.alive.filter((id) => id !== pid).map((id) => ({ id, name: this.pname(id) })) };

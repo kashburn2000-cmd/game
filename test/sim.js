@@ -408,5 +408,64 @@ ok((eaP.statBumps?.wits || 0) <= 2, 'stat bumps cap at +2');
 views(e2, c2);
 Math.random = origRandom;
 
+// ---------------- name easter eggs ----------------
+section('name easter eggs');
+import { NAME_EGGS, WHISPERS as WLIST } from '../src/engine/content.js';
+const e3 = new Engine(newRoom('EGGT'));
+const c3 = [];
+for (const nm of ['Kevin', 'Brenda', 'Alex', 'Jason', 'Annie', 'Matt']) {
+  const c = { role: 'player', playerId: null };
+  e3.handle(c, { type: 'join', name: nm });
+  c3.push(c);
+}
+ok(e3.s.players.every((p) => p.egg), 'all six real names recognized');
+ok(!new Engine(newRoom('X')).s.players.some((p) => p.egg), 'strangers get no eggs');
+e3.handle(c3[0], { type: 'start' });
+let g3 = e3.s.game;
+const expl3 = c3.filter((c) => !['cultist', 'medium', 'occultist'].includes(g3.roles[c.playerId]));
+const cult3b = c3.filter((c) => g3.roles[c.playerId] === 'cultist');
+const med3 = c3.find((c) => g3.roles[c.playerId] === 'medium');
+const occ3 = c3.find((c) => g3.roles[c.playerId] === 'occultist');
+
+// The Palace knows visitors by name — once per evening.
+e3.handle(expl3[0], { type: 'explore', location: 'church' });
+const ex3 = g3.night.explores[expl3[0].playerId];
+const eggKey3 = e3.player(expl3[0].playerId).egg;
+ok(typeof ex3.egg === 'string' && ex3.egg === NAME_EGGS[eggKey3].scene, 'the Palace addresses the visitor by name');
+ok(e3.s.campaign.eggSceneUsed[eggKey3] === true, 'scene egg burns for the evening');
+ok(e3.viewFor(expl3[0]).you.nightUI.scene.egg === ex3.egg, 'egg line reaches the phone');
+
+// Resolve night 1: the cult takes the second explorer.
+doNight(e3, c3, { cultTarget: expl3[1].playerId, wardTarget: occ3.playerId });
+g3 = e3.s.game;
+ok(g3.phase === 'dawn' && g3.spirits.includes(expl3[1].playerId), 'egg-test night resolves with a new spirit');
+advanceTimer(e3); // -> day
+
+// Spirit whisper options grow by one per living recognized name.
+let wv = e3.viewFor(expl3[1]).you.whisperUI;
+const aliveMatched = e3.s.players.filter((p) => p.egg && g3.alive.includes(p.id)).length;
+ok(wv.options.length === WLIST.length + aliveMatched, `whisper menu carries ${aliveMatched} personal lines`);
+e3.handle(expl3[1], { type: 'whisper', index: WLIST.length });
+ok(g3.whispersFeed.length === 1 && Object.values(NAME_EGGS).some((e) => e.whisper === g3.whispersFeed[0].text), 'personal whisper lands on the TV');
+ok(Object.keys(e3.s.campaign.eggWhisperUsed).length === 1, 'personal whisper burns for the evening');
+wv = e3.viewFor(expl3[1]).you.whisperUI;
+ok(wv.options.length === WLIST.length + aliveMatched - 1, 'burnt whisper leaves the menu');
+
+// The Courier prints something personal (forced via random=0). Note: one
+// egg may already have fired naturally at dawn 1 (35% chance) — diff sets.
+const usedBefore = Object.keys(e3.s.campaign.eggCourierUsed || {});
+e3.handle(c3[0], { type: 'skipToVote' });
+doVote(e3, c3, 'abstain');
+advanceTimer(e3); // -> night 2
+const origRandom3 = Math.random;
+Math.random = () => 0;
+doNight(e3, c3, { cultTarget: expl3[0].playerId, wardTarget: expl3[0].playerId }); // warded: no death
+Math.random = origRandom3;
+g3 = e3.s.game;
+ok(g3.phase === 'dawn', 'egg-test night 2 resolves');
+const newKeys = Object.keys(e3.s.campaign.eggCourierUsed || {}).filter((k) => !usedBefore.includes(k));
+ok(newKeys.length === 1 && g3.dawnReport.includes(NAME_EGGS[newKeys[0]].courier), 'the Courier prints a personal notice');
+views(e3, c3);
+
 console.log(failures ? `\n${failures} FAILURES` : '\nAll checks passed.');
 process.exit(failures ? 1 : 0);

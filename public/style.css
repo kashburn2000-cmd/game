@@ -120,6 +120,42 @@ body {
 
 .gameover .endline { font-size: clamp(1.2rem, 2.6vw, 2rem); max-width: 70ch; }
 .gameover.doomed .endline { color: #e8a39b; }
+
+/* ---------- the Courier front page ---------- */
+.courier { background: linear-gradient(180deg, #efe6ce, #e2d5b2); color: #211c12; width: min(94vw, 1200px);
+  padding: 1.6rem 2.2rem 1.8rem; border-radius: .2rem; box-shadow: 0 14px 50px rgba(0,0,0,.7); text-align: left;
+  max-height: 68vh; overflow-y: auto; }
+.doomed .courier { background: linear-gradient(180deg, #e9dcb4, #d8c384); }
+.c-mast { text-align: center; font-size: clamp(1.8rem, 4.5vw, 3.4rem); letter-spacing: .04em; font-weight: bold;
+  border-bottom: 3px double #211c12; padding-bottom: .3rem; font-variant: small-caps; }
+.c-date { text-align: center; font-size: clamp(.6rem, 1.1vw, .8rem); letter-spacing: .18em; padding: .3rem 0;
+  border-bottom: 1px solid #211c12; }
+.c-head { text-align: center; font-size: clamp(1.3rem, 3.4vw, 2.6rem); letter-spacing: .06em; line-height: 1.15;
+  padding: .8rem 0 .6rem; text-wrap: balance; }
+.c-cols { display: grid; grid-template-columns: 1.3fr 1fr 1.1fr; gap: 1.4rem; border-top: 1px solid #211c12; padding-top: .8rem; }
+@media (max-width: 900px) { .c-cols { grid-template-columns: 1fr; } }
+.c-col { border-left: 1px solid rgba(33,28,18,.35); padding-left: 1.4rem; }
+.c-col:first-child { border-left: none; padding-left: 0; }
+.c-lead p { font-size: clamp(.9rem, 1.7vw, 1.2rem); margin-bottom: .7rem; }
+.c-inter { font-style: italic; }
+.c-sec { font-size: clamp(.65rem, 1.1vw, .8rem); letter-spacing: .22em; border-bottom: 1px solid #211c12;
+  margin: .7rem 0 .4rem; padding-bottom: .15rem; font-weight: bold; }
+.c-small { font-size: clamp(.72rem, 1.3vw, .95rem); margin: .25rem 0; }
+
+/* ---------- lobby extras: QR + rotating cast card ---------- */
+.joinrow { display: flex; gap: 1.2rem; flex-wrap: wrap; justify-content: center; align-items: stretch; }
+.qr { display: block; margin: .8rem auto 0; border-radius: .4rem; width: clamp(140px, 22vh, 264px); height: auto; }
+.castrot { min-height: 4.2rem; display: flex; justify-content: center; }
+.castrotcard { display: flex; align-items: baseline; gap: .7rem; max-width: 78ch; background: rgba(16,24,32,.7);
+  border: 1px solid #2a3846; border-radius: .7rem; padding: .6rem 1.1rem; animation: inkfade .8s ease; }
+.castrotcard.team-cult { border-color: rgba(192,57,43,.55); }
+.castrotcard.team-lunatic { border-color: rgba(212,175,55,.5); }
+.castroticon { font-size: 1.4rem; }
+.castrotname { letter-spacing: .14em; color: var(--gold); white-space: nowrap; }
+.castrotdesc { color: var(--parchment-dim); font-size: clamp(.8rem, 1.5vw, 1rem); }
+
+.eggtext { color: var(--gold); font-style: italic; margin: .4rem 0 .6rem; padding-left: .8rem;
+  border-left: 2px solid var(--gold); font-size: .95rem; text-shadow: 0 0 12px rgba(212,175,55,.35); }
 .cols { display: flex; gap: 3rem; flex-wrap: wrap; justify-content: center; text-align: left; margin-top: 1rem; }
 .col h3 { letter-spacing: .2em; color: var(--gold); margin: .8rem 0 .4rem; font-size: clamp(.9rem, 1.6vw, 1.2rem); }
 .truthrow, .titlerow, .objrow { font-size: clamp(.9rem, 1.7vw, 1.25rem); margin: .25rem 0; }
