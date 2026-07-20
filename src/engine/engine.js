@@ -40,6 +40,12 @@ export class Engine {
     const any = [...this.s.players].sort((a, b) => a.joinOrder - b.joinOrder);
     return (c[0] || any[0])?.id || null;
   }
+  // The founding player: first-ever join. Host duties can temporarily hop to
+  // another connected phone, but the guest list never leaves the founder.
+  foundingId() {
+    const all = [...this.s.players].sort((a, b) => a.joinOrder - b.joinOrder);
+    return all[0]?.id || null;
+  }
   get g() { return this.s.game; }
   alive(id) { return this.g && this.g.alive.includes(id); }
   spirit(id) { return this.g && this.g.spirits.includes(id); }
@@ -86,7 +92,7 @@ export class Engine {
       case 'extend': return isHost && this.extend();
       case 'skipToVote': return isHost && this.g?.phase === 'day' && this.startVote();
       case 'markBroken': return isHost && this.markBroken(msg.playerId, !!msg.broken);
-      case 'assignEgg': return isHost && this.assignEgg(msg.playerId, msg.egg);
+      case 'assignEgg': return isHost && this.assignEgg(pid, msg.playerId, msg.egg);
       case 'kick': return isHost && this.kick(msg.playerId);
       case 'night': return this.nightAction(pid, msg.target);
       case 'explore': return this.explore(pid, msg.location);
@@ -161,9 +167,10 @@ export class Engine {
     this.s.players = this.s.players.filter((p) => p.id !== targetId);
   }
 
-  // Host privately tags who a player really is; the Play takes note.
-  // Overrides any auto-match from the typed join name.
-  assignEgg(targetId, egg) {
+  // The founding host privately tags who a player really is; the Play takes
+  // note. Overrides any auto-match from the typed join name.
+  assignEgg(actorId, targetId, egg) {
+    if (actorId !== this.foundingId()) return; // never a fallback host
     const p = this.player(targetId);
     if (!p) return;
     if (egg !== null && !NAME_EGGS[egg]) return;
@@ -1076,9 +1083,13 @@ export class Engine {
         canStart: !g || g.phase === 'gameover',
         phase: g ? g.phase : 'lobby',
         cursed: g ? Object.entries(g.curse).map(([id, c]) => ({ id, name: this.pname(id), broken: c.broken })) : [],
-        eggKeys: Object.keys(NAME_EGGS),
-        eggs: this.s.players.map((q) => ({ id: q.id, name: q.name, egg: q.egg || null })),
       };
+      // The guest list is for the founding host's eyes only — a fallback
+      // host inheriting the controls never sees the tags.
+      if (pid === this.foundingId()) {
+        you.hostUI.eggKeys = Object.keys(NAME_EGGS);
+        you.hostUI.eggs = this.s.players.map((q) => ({ id: q.id, name: q.name, egg: q.egg || null }));
+      }
     }
     if (!g) return v;
     const role = this.role(pid);

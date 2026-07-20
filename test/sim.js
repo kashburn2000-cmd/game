@@ -488,6 +488,17 @@ e4.handle(c4[0], { type: 'assignEgg', playerId: c4[2].playerId, egg: null });
 ok(!e4.player(c4[2].playerId).egg, 'host can clear a tag');
 e4.handle(c4[1], { type: 'assignEgg', playerId: c4[3].playerId, egg: 'matt' });
 ok(!e4.player(c4[3].playerId).egg, 'non-host cannot tag');
+// Founding-host protection: if the founder drops, the fallback host gets
+// controls but never the guest list.
+e4.engineDisconnectTest = e4.disconnect(c4[0].playerId);
+ok(e4.hostId() === c4[1].playerId, 'host duties hop to next phone while founder is away');
+const fallbackUI = e4.viewFor(c4[1]).you.hostUI;
+ok(fallbackUI && !fallbackUI.eggs, 'fallback host sees controls but no guest list');
+e4.handle(c4[1], { type: 'assignEgg', playerId: c4[3].playerId, egg: 'matt' });
+ok(!e4.player(c4[3].playerId).egg, 'fallback host cannot tag either');
+e4.reconnectMark(c4[0].playerId);
+ok(e4.hostId() === c4[0].playerId, 'founder reconnects and host returns');
+ok(e4.viewFor(c4[0]).you.hostUI.eggs, 'guest list back with the founder');
 e4.handle(c4[0], { type: 'assignEgg', playerId: c4[3].playerId, egg: 'nonsense' });
 ok(!e4.player(c4[3].playerId).egg, 'unknown identities rejected');
 // Tagged alias still triggers the Palace scene egg.
