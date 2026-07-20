@@ -1,7 +1,7 @@
 {
   // Cloudflare Workers config for Strange Is the Night.
   // Deploy with: npx wrangler deploy   (see README.md for the friendly guide)
-  "name": "strange-is-the-night",
+  "name": "game",
   "main": "src/worker.js",
   "compatibility_date": "2026-07-01",
   // The game's home. Deploying auto-attaches these domains — they just need
