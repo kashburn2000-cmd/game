@@ -99,6 +99,17 @@ export class Room {
     let msg;
     try { msg = JSON.parse(raw); } catch { return; }
     const conn = ws.deserializeAttachment() || { role: 'player', playerId: null };
+    // The Courier's photographer: founder-only, relayed straight to the TV,
+    // never touches game state or storage.
+    if (msg.type === 'photo') {
+      if (typeof msg.data === 'string' && msg.data.startsWith('data:image/jpeg') && msg.data.length < 400000 &&
+        conn.playerId && conn.playerId === this.engine.foundingId()) {
+        for (const sock of this.ctx.getWebSockets()) {
+          try { if (sock.deserializeAttachment()?.role === 'tv') sock.send(JSON.stringify({ type: 'photo', data: msg.data })); } catch { }
+        }
+      }
+      return;
+    }
     this.engine.handle(conn, msg);
     ws.serializeAttachment(conn); // join/reconnect may have set conn.playerId
     if (conn.playerId && msg.type === 'join') {

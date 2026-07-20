@@ -30,6 +30,7 @@
     ws.onmessage = (ev) => {
       let msg; try { msg = JSON.parse(ev.data); } catch { return; }
       if (msg.type === 'joined') { saved.rooms[c] = msg.token; persist(); }
+      if (msg.type === 'photo' && role === 'tv') showArchivalPhoto(msg.data);
       if (msg.type === 'state') {
         view = msg.view;
         timeOffset = Date.now() - view.now;
@@ -176,8 +177,11 @@
         body = `
           <div class="scene dawn">
             <h2 class="phasetitle">DAWN</h2>
-            <div class="parchment">
-              ${(v.dawnReport || []).map((l, i) => `<p class="dawnline" style="animation-delay:${i * 1.6}s">${esc(l)}</p>`).join('')}
+            <div class="dawnrow">
+              <div class="parchment">
+                ${(v.dawnReport || []).map((l, i) => `<p class="dawnline" style="animation-delay:${i * 1.6}s">${esc(l)}</p>`).join('')}
+              </div>
+              ${v.dawnPhoto ? `<div class="obit"><img class="aged" src="${esc(v.dawnPhoto.src)}" alt="" onerror="this.closest('.obit').style.display='none'"><div class="photocap">${esc(v.dawnPhoto.caption)}</div></div>` : ''}
             </div>
             <div class="timer tiny" data-deadline="${v.deadline}"></div>
           </div>`;
@@ -405,7 +409,7 @@
           <button class="targetbtn abstain" data-action="tarot-decline">Accept what the die said</button>
         </div>`;
     }
-    const eggLine = ui.scene.egg ? `<p class="eggtext">${esc(ui.scene.egg)}</p>` : '';
+    const eggLine = ui.scene.egg ? `<p class="eggtext">${esc(ui.scene.egg)}</p>${ui.scene.eggImg ? `<div class="obit small"><img class="aged" src="${esc(ui.scene.eggImg)}" alt="" onerror="this.closest('.obit').style.display='none'"></div>` : ''}` : '';
     if (!ui.result) {
       return `
         <h2>${esc(ui.scene.loc).toUpperCase()}</h2>${rareBanner}
@@ -540,10 +544,14 @@
         <button class="minibtn" data-action="extend">＋1 min</button>
         ${v.phase === 'day' ? `<button class="minibtn" data-action="skipToVote">skip to vote</button>` : ''}
         <button class="minibtn" data-action="forceAdvance">force next phase</button>`;
-      if ((ui.cursed || []).length && ['day', 'vote'].includes(v.phase)) {
-        inner += `<p class="hint">Curse enforcement (spirits are watching):</p>` +
-          ui.cursed.map((c) => `<button class="minibtn ${c.broken ? 'bad' : ''}" data-action="markBroken" data-id="${c.id}" data-broken="${c.broken ? '0' : '1'}">${esc(c.name)}: ${c.broken ? 'un-break' : 'mark broken'}</button>`).join('');
-      }
+    }
+    if ((ui.cursed || []).length && ['day', 'vote'].includes(v.phase)) {
+      inner += `<p class="hint">Curse enforcement (spirits are watching):</p>` +
+        ui.cursed.map((c) => `<button class="minibtn ${c.broken ? 'bad' : ''}" data-action="markBroken" data-id="${c.id}" data-broken="${c.broken ? '0' : '1'}">${esc(c.name)}: ${c.broken ? 'un-break' : 'mark broken'}</button>`).join('');
+    }
+    if (ui.eggs && v.phase !== 'night') {
+      inner += `<button class="minibtn" data-action="photo">📸 the Courier’s photographer</button>
+        <input type="file" accept="image/*" capture="environment" id="photoInput" class="hidden">`;
     }
     return `<details class="hostpanel" open><summary>⭐ Host controls</summary>${inner}</details>`;
   }
@@ -570,6 +578,48 @@
     if (jc) jc.value = m[1].toUpperCase();
     const jn = document.getElementById('jname');
     if (jn && !jn.value) jn.focus();
+  }
+
+  // A live photograph, arriving as an archival plate on the TV.
+  let plateNo = 0;
+  function showArchivalPhoto(data) {
+    if (typeof data !== 'string' || !data.startsWith('data:image/jpeg')) return;
+    const caps = ['Recovered from the Palace archives', 'Photographer unknown. Plate dated 1912', 'Found pressed in the promptbook', 'From the Courier’s morgue file', 'Deposited anonymously at the box office'];
+    plateNo++;
+    const div = document.createElement('div');
+    div.className = 'photoveil';
+    div.innerHTML = `<div class="photoframe"><img src="${data}" alt=""><div class="photocap">PLATE ${plateNo} — ${caps[plateNo % caps.length]}</div></div>`;
+    document.body.appendChild(div);
+    if (window.SoundKit && SoundKit.ready()) SoundKit.sting('haunt');
+    setTimeout(() => div.remove(), 14000);
+  }
+
+  // Host camera: capture, shrink, age a century, send.
+  function agePhoto(file) {
+    const img = new Image();
+    img.onload = () => {
+      const sc = Math.min(1, 720 / img.width);
+      const cv = document.createElement('canvas');
+      cv.width = Math.max(1, Math.round(img.width * sc));
+      cv.height = Math.max(1, Math.round(img.height * sc));
+      const cx = cv.getContext('2d');
+      cx.drawImage(img, 0, 0, cv.width, cv.height);
+      const idata = cx.getImageData(0, 0, cv.width, cv.height);
+      const d = idata.data;
+      for (let i = 0; i < d.length; i += 4) {
+        const g = d[i] * 0.3 + d[i + 1] * 0.59 + d[i + 2] * 0.11;
+        const n = (Math.random() - 0.5) * 20;
+        d[i] = Math.min(255, g * 1.05 + 32 + n);
+        d[i + 1] = Math.min(255, g * 0.92 + 18 + n);
+        d[i + 2] = Math.min(255, g * 0.72 + n);
+      }
+      cx.putImageData(idata, 0, 0);
+      let data = cv.toDataURL('image/jpeg', 0.55);
+      if (data.length > 350000) data = cv.toDataURL('image/jpeg', 0.3);
+      if (data.length <= 390000) send({ type: 'photo', data });
+      URL.revokeObjectURL(img.src);
+    };
+    img.src = URL.createObjectURL(file);
   }
 
   // The lobby's rotating role card.
@@ -631,9 +681,13 @@
       case 'tarot-decline': send({ type: 'tarot', use: false }); break;
       case 'spendXp': send({ type: 'spendXp', stat: btn.dataset.stat }); break;
       case 'rising': send({ type: 'risingPick', stat: btn.dataset.stat, spend: !!document.getElementById('spendItem')?.checked }); break;
+      case 'photo': document.getElementById('photoInput')?.click(); break;
     }
   });
-  document.addEventListener('change', (e) => { if (e.target.id === 'spendItem') spendItem = e.target.checked; });
+  document.addEventListener('change', (e) => {
+    if (e.target.id === 'spendItem') spendItem = e.target.checked;
+    if (e.target.id === 'photoInput' && e.target.files?.[0]) { agePhoto(e.target.files[0]); e.target.value = ''; }
+  });
 
   render();
 })();

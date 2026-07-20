@@ -518,6 +518,22 @@ export class Engine {
       this.fx('death');
     }
 
+    // The Courier's archive: a recognized victim's photo runs with the
+    // obituary — once per person per evening. (Photo files are optional;
+    // the TV hides the frame if none is uploaded.)
+    g.dawnPhoto = null;
+    if (death) {
+      const dp = this.player(death);
+      if (dp?.egg) {
+        const campP = this.s.campaign;
+        campP.eggPhotoUsed = campP.eggPhotoUsed || {};
+        if (!campP.eggPhotoUsed[dp.egg]) {
+          campP.eggPhotoUsed[dp.egg] = true;
+          g.dawnPhoto = { egg: dp.egg };
+        }
+      }
+    }
+
     // The Archivist's records: did their target leave an entry tonight?
     const archId = g.alive.concat(g.spirits).find((id) => this.role(id) === 'archivist');
     const archAct = archId ? g.night.acts[archId] : null;
@@ -1035,7 +1051,13 @@ export class Engine {
       }
       v.night = { waiting, total: g.alive.length, spirits: g.night.spiritsAtStart.length, line: g.nightLine };
     }
-    if (g.phase === 'dawn') v.dawnReport = g.dawnReport;
+    if (g.phase === 'dawn') {
+      v.dawnReport = g.dawnReport;
+      if (g.dawnPhoto) v.dawnPhoto = {
+        src: 'eggs/' + g.dawnPhoto.egg + '.jpg',
+        caption: `From the Courier archive: ${g.dawnPhoto.egg.toUpperCase()}, photographed outside the Palace. The plate is dated 1912.`,
+      };
+    }
     if (g.phase === 'day' || g.phase === 'vote') {
       v.whispersFeed = g.whispersFeed;
       v.cursed = Object.entries(g.curse).map(([id, c]) => ({ id, name: this.pname(id), text: CURSES.find((x) => x.id === c.curseId)?.text, broken: c.broken }));
@@ -1138,6 +1160,7 @@ export class Engine {
             rare: !!ex.rare,
             text: ex.stage2 ? ex.stage2.text : scene.text,
             egg: ex.egg || null,
+            eggImg: ex.egg && this.player(pid)?.egg ? 'eggs/' + this.player(pid).egg + '.jpg' : null,
             vision: ex.stage2 ? null : ex.vision || null,
             deeper: !!ex.stage2,
             partial: ex.partial ? { ...ex.partial, gained: ex.partial.gained ? ITEMS[ex.partial.gained] : null } : null,

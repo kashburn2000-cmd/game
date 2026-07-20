@@ -93,12 +93,33 @@ again from the new folder. Same URL, new game.
    the Doom Track. For the last game of the night, the host checks
    **🌌 The Stars Are Right** to unlock the extra roles and the boss finale.
 
+### Friend photos (optional, highly recommended)
+
+Drop a photo of each friend into the `public/eggs/` folder of the repo,
+named exactly: `brendan.jpg`, `alex.jpg`, `jason.jpg`, `annie.jpg`,
+`matt.jpg`, `kevin.jpg` (lowercase, .jpg). Easiest way, all in the
+browser: on GitHub, open the `public/eggs` folder → **Add file →
+Upload files** → drag the photos in → **Commit**. The site redeploys
+itself, and the game gains two moments per person — an "archival plate"
+of their face beside their obituary on the TV, and a photo in their
+personal Palace Theater scene. The display ages the photos ~100 years
+automatically; upload normal modern photos.
+
+Note: anything in `public/` is served on the website (and visible in the
+repo). If the repo is public and that matters to you, flip it to private
+first: GitHub → Settings → General → Danger Zone → Change visibility.
+Cloudflare's deploy keeps working with private repos.
+
 ### Host tips
 
 - Phones that fall asleep reconnect automatically to the same seat — just
   reopen the page. Friends arriving late can join mid-game as ghosts.
 - If a phase ever stalls (someone's in the bathroom), the host's
   **force next phase** button auto-resolves it.
+- Your host phone also carries **📸 the Courier's photographer**: snap a
+  candid photo mid-argument and it appears on the TV for 14 seconds as an
+  aged archival plate ("PLATE 4 — Recovered from the Palace archives").
+  Ephemeral — shown once, stored nowhere.
 - The spirits enforce curses gleefully, but the host's phone has the actual
   "mark broken" button. Breaking a curse forfeits that day's vote.
 

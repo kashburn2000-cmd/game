@@ -24,10 +24,11 @@ try {
 
   const mkWs = (role) => new Promise((res, rej) => {
     const w = new WebSocket(`ws://127.0.0.1:${PORT}/ws/${code}?role=${role}`);
-    const conn = { ws: w, view: null, playerId: null, token: null };
+    const conn = { ws: w, view: null, playerId: null, token: null, photos: [] };
     w.on('message', (raw) => {
       const m = JSON.parse(raw);
       if (m.type === 'state') conn.view = m.view;
+      if (m.type === 'photo') conn.photos.push(m.data);
       if (m.type === 'joined') { conn.playerId = m.playerId; conn.token = m.token; }
     });
     w.on('open', () => res(conn));
@@ -78,6 +79,13 @@ try {
   await sleep(400);
   ok(tv.view.phase === 'dawn', 'all night actions resolve to dawn over the wire');
   ok((tv.view.dawnReport || []).length >= 3, 'TV received the dawn report');
+
+  // The Courier's photographer: founder-only relay, straight to the TV.
+  send(phones[1], { type: 'photo', data: 'data:image/jpeg;base64,AAAA' }); // not the founder
+  send(phones[0], { type: 'photo', data: 'data:image/jpeg;base64,AAAA' }); // the founder
+  await sleep(400);
+  ok(tv.photos.length === 1, 'photo relay accepts the founder and rejects others');
+  ok(phones[2].photos.length === 0, 'photos go to the TV only, never other phones');
 
   // Reconnect test: drop a phone and rejoin by token.
   const dropped = phones[1];

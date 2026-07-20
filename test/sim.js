@@ -439,6 +439,10 @@ ok(e3.viewFor(expl3[0]).you.nightUI.scene.egg === ex3.egg, 'egg line reaches the
 doNight(e3, c3, { cultTarget: expl3[1].playerId, wardTarget: occ3.playerId });
 g3 = e3.s.game;
 ok(g3.phase === 'dawn' && g3.spirits.includes(expl3[1].playerId), 'egg-test night resolves with a new spirit');
+const victimEgg = e3.player(expl3[1].playerId).egg;
+ok(g3.dawnPhoto?.egg === victimEgg, 'obituary plate queued for the recognized victim');
+ok(e3.s.campaign.eggPhotoUsed[victimEgg] === true, 'obituary plate burns for the evening');
+ok(e3.viewFor({ role: 'tv', playerId: null }).dawnPhoto?.src === 'eggs/' + victimEgg + '.jpg', 'TV dawn view carries the plate');
 advanceTimer(e3); // -> day
 
 // Spirit whisper options grow by one per living recognized name.

@@ -82,6 +82,15 @@ server.on('upgrade', (req, socket, head) => {
     ws.send(JSON.stringify({ type: 'state', view: room.engine.viewFor(conn) }));
     ws.on('message', (raw) => {
       let msg; try { msg = JSON.parse(raw); } catch { return; }
+      if (msg.type === 'photo') {
+        if (typeof msg.data === 'string' && msg.data.startsWith('data:image/jpeg') && msg.data.length < 400000 &&
+          conn.playerId && conn.playerId === room.engine.foundingId()) {
+          for (const s of room.socks) {
+            try { if (s.conn.role === 'tv') s.ws.send(JSON.stringify({ type: 'photo', data: msg.data })); } catch { }
+          }
+        }
+        return;
+      }
       room.engine.handle(conn, msg);
       if (conn.playerId && msg.type === 'join') {
         try { ws.send(JSON.stringify({ type: 'joined', playerId: conn.playerId, token: room.engine.player(conn.playerId)?.token })); } catch { }
