@@ -57,17 +57,23 @@ try {
   const cultPhone = phones.find((p) => p.view.you.role === 'cultist');
   ok(cultPhone.view.you.mates.length === 1, 'cultist sees their partner');
 
-  // Everyone acts.
+  // Everyone acts. Explorers may hit two-stage scenes or tarot offers, so
+  // keep responding until their scene fully resolves.
   for (const p of phones) {
     const y = p.view.you;
-    if (['cultist', 'medium', 'occultist'].includes(y.role)) {
+    if (['cultist', 'medium', 'occultist', 'archivist'].includes(y.role)) {
       send(p, { type: 'night', target: y.nightUI.targets[0].id });
+      await sleep(100);
     } else {
       send(p, { type: 'explore', location: 'library' });
-      await sleep(150);
-      send(p, { type: 'exploreChoice', index: 0 });
+      for (let i = 0; i < 5; i++) {
+        await sleep(200);
+        const ui = p.view.you.nightUI;
+        if (!ui || ui.result || !ui.scene) break;
+        if (ui.await) send(p, { type: 'tarot', use: false });
+        else send(p, { type: 'exploreChoice', index: 0 });
+      }
     }
-    await sleep(100);
   }
   await sleep(400);
   ok(tv.view.phase === 'dawn', 'all night actions resolve to dawn over the wire');
