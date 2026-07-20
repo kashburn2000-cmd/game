@@ -51,14 +51,26 @@ That's it. The command prints a URL ending in **`.workers.dev`** — the game
 is live there right now, for free. Open that URL on your TV's browser and
 you're in business.
 
-### Optional: put it on your own domain
+### The domain: strangeisthenight.party
 
-1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages**.
-2. Click **strange-is-the-night** → **Settings** → **Domains & Routes**.
-3. Click **Add** → **Custom domain**, type something like `game.yourdomain.com`, confirm.
+The project is pre-configured to live at **strangeisthenight.party** (and
+`www.`) — `npx wrangler deploy` attaches the domain automatically. The only
+requirement is that the domain exists in the **same Cloudflare account**
+you logged into:
 
-A minute later the game answers at `game.yourdomain.com`. (This only works
-for a domain that's already managed by the same Cloudflare account.)
+- **Bought through Cloudflare?** Nothing to do — it's already there.
+- **Bought elsewhere (Namecheap, GoDaddy, Porkbun...)?** One-time move:
+  1. [dash.cloudflare.com](https://dash.cloudflare.com) → **Add a domain** →
+     type `strangeisthenight.party` → pick the **Free** plan.
+  2. Cloudflare shows you two **nameservers** (like `ada.ns.cloudflare.com`).
+     At the site where you bought the domain, find the domain's
+     **Nameservers** setting and replace whatever is there with those two.
+  3. Wait for Cloudflare to email "your domain is active" (minutes to a few
+     hours), then run `npx wrangler deploy` (again, if you already had).
+
+If `deploy` complains it can't create the custom domain, the domain isn't
+active in your account yet — the game still works at the `.workers.dev`
+URL in the meantime.
 
 ### Updating the game later
 

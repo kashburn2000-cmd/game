@@ -4,6 +4,12 @@
   "name": "strange-is-the-night",
   "main": "src/worker.js",
   "compatibility_date": "2026-07-01",
+  // The game's home. Deploying auto-attaches these domains — they just need
+  // to exist as a zone in the same Cloudflare account first.
+  "routes": [
+    { "pattern": "strangeisthenight.party", "custom_domain": true },
+    { "pattern": "www.strangeisthenight.party", "custom_domain": true }
+  ],
   "assets": {
     "directory": "public",
     "binding": "ASSETS"
