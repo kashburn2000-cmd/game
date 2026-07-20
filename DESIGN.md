@@ -1,10 +1,11 @@
 # A Shadow Over Arkham
 
-A Lovecraftian social deduction party game for 6–8 players. Runs in a browser
+A Lovecraftian social deduction party game for 6–8 players, with a light
+RPG layer — a hybrid of Werewolf and a TTRPG one-shot. Runs in a browser
 on the living-room TV; players join from their phones via a room code. The
 arguing happens out loud in the room — the app handles everything that
 normally needs a moderator or trust: secret roles, night actions, anonymous
-voting, timers, and dramatic reveals.
+voting, timers, dice, and dramatic reveals.
 
 ## The pitch
 
@@ -41,7 +42,8 @@ Dealt secretly to phones at game start.
 2. **Night.** TV dims to fog/ambient dread — identical visuals regardless of
    what's happening, so it can't leak information. Phones prompt night
    actions (cultists pick a victim, Medium divines, Occultist wards). Phone
-   vibration cues your turn.
+   vibration cues your turn. **Everyone else explores** (see RPG layer), so
+   every phone is busy every night — cultists can't be spotted by activity.
 3. **Morning.** TV narrates the night's events in pulpy prose. Night one has
    a kill (early death is softened by ghost powers — first ghost gets first
    haunting).
@@ -73,15 +75,67 @@ designed to be fun without leaking secrets:
 
 Late arrivals join as spirits until the next game deals them in.
 
-## The evening as a campaign
+## The RPG layer (Werewolf × one-shot hybrid)
 
-- Persistent scoreboard across games: each win earns the side **Elder Signs**.
+### Personas with stats
+
+Each 1920s persona carries three light stats — **Brawn / Wits / Nerve** —
+that modify d20 checks. Dice rolls are shown dramatically (phone roll, TV
+result). Picking a persona is picking a playstyle.
+
+### Night exploration & items
+
+Players without a power action choose a location each night — the docks,
+the library, the graveyard, Hibb's Roadhouse — and get a short narrated
+scene with a choice, Call-of-Cthulhu style. Outcomes (sometimes gated by a
+stat check): find an item, gain/lose sanity, or generate flavor that feeds
+the morning narration ("three townsfolk were seen near the docks").
+
+One-use items, curated so nothing directly reveals hidden roles:
+
+| Item | Effect |
+|---|---|
+| **Elder Sign amulet** | Survive one sacrifice ("the sigil on their door burned bright"). |
+| **Whiskey flask** | Shrug off a haunting curse. |
+| **Press credentials** | Privately see one vote's tally breakdown after the fact. |
+| **Grave dirt** | Force the next haunting to target a player of your choice. |
+
+### Sanity & madness
+
+Each persona has a sanity meter. Horrors cost sanity: being attacked and
+saved, witnessing an innocent banished, bad exploration outcomes. At zero
+you are not eliminated — you gain a permanent **madness quirk** (same
+machinery as haunting curses, e.g. "you now refer to yourself in the third
+person").
+
+### Secret personal objectives
+
+Every player draws a hidden side-quest at deal time, worth bonus Elder
+Signs: "get someone else to say 'tentacle'", "vote with the majority three
+times", "get haunted and survive to the end". Gives innocents secret
+reasons to act suspicious.
+
+## The evening as a campaign (one-shot arc)
+
+- Persistent scoreboard across games: each win earns the side **Elder Signs**
+  (plus personal bonuses from objectives).
+- **Doom Track:** the Ritual's progress across the whole evening. Cult wins
+  advance it; town wins add wards. Short narrative interludes between games
+  react to what actually happened.
 - Post-game **stats ceremony** on the TV: who voted for whom all night, plus
   earned titles — "Most Paranoid" (voted against most innocents), "Silver
   Tongue" (longest-surviving cultist), "Cassandra" (was right, banished
   anyway).
 - Final game of the night: **"The Stars Are Right"** — stretch roles enabled,
-  TV visuals progressively more apocalyptic.
+  TV visuals progressively more apocalyptic. The Doom Track sets its stakes:
+  cult ahead → the finale starts with the stars nearly right and a bonus
+  cultist; town ahead → the cult gets desperate and loud.
+- **The Rising (boss finale, build-last):** if the cult completes the ritual
+  in the final game, everyone — living, dead, and cultists alike — plays a
+  ~10-minute cooperative epilogue: persona stat rolls on phones, dice on the
+  TV, hoarded items spent, to banish what was summoned. The table wins or
+  loses together. If build time runs out, the ritual ending falls back to a
+  cinematic TV sequence instead of a playable fight.
 
 ## Narration tone
 
