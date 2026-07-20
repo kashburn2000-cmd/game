@@ -3,7 +3,7 @@
 // call handle()/tick(), then broadcast viewFor() to each connection and
 // persist serialize() output. All state is JSON-serializable.
 
-import { PERSONAS, ROLES, CURSES, WHISPERS, ITEMS, LOCATIONS, OBJECTIVES, NARRATION, TITLES } from './content.js';
+import { PERSONAS, ROLES, CURSES, WHISPERS, ITEMS, LOCATIONS, OBJECTIVES, NARRATION, TITLES, DOOM_LINES, INTERLUDES, RISING_ROUNDS } from './content.js';
 
 const rand = (n) => Math.floor(Math.random() * n);
 const pick = (a) => a[rand(a.length)];
@@ -215,8 +215,14 @@ export class Engine {
     g.votes = {};
     // Clear yesterday's curses (quirks persist).
     g.curse = {};
+    g.nightLine = pick(NARRATION.nightScene);
     this.setPhase('night');
     this.fx('night');
+  }
+
+  doomLine() {
+    const tier = Math.min(3, Math.floor(this.s.campaign.doom / 3));
+    return pick(DOOM_LINES[tier]);
   }
 
   // ---------- night ----------
@@ -340,7 +346,10 @@ export class Engine {
         this.loseSanity(victim, 2);
       } else {
         death = victim;
-        report.push(pick(NARRATION.dawnDeath)(this.pname(victim)));
+        // Half the time, the victim's persona gets their bespoke death scene.
+        const per = this.persona(this.player(victim));
+        if (per?.death && Math.random() < 0.5) report.push(per.death);
+        else report.push(pick(NARRATION.dawnDeath)(this.pname(victim)));
       }
     } else {
       report.push('No one was taken in the night — an outcome so unusual the town finds it deeply unsettling.');
@@ -609,6 +618,7 @@ export class Engine {
     else if (winner === 'dawn') camp.doom = Math.max(0, camp.doom - 3);
     else if (winner === 'oldone') camp.doom = 10;
     else camp.doom = Math.max(0, camp.doom - 1);
+    camp.doomLine = this.doomLine(); // stable flavor line until doom changes again
 
     // Titles.
     const titles = [];
@@ -650,6 +660,8 @@ export class Engine {
     g.ceremony = {
       winner,
       line: lineFn(),
+      interlude: pick(INTERLUDES[winner] || INTERLUDES.town),
+      doomLine: camp.doomLine,
       roles: this.s.players.filter((p) => this.role(p.id)).map((p) => ({ id: p.id, role: this.role(p.id) })),
       titles,
       objectives: this.s.players.map((p) => ({ id: p.id, obj: g.objectives[p.id] || null })),
@@ -732,6 +744,7 @@ export class Engine {
       code: this.s.code,
       fx: this.s.fx,
       doom: this.s.campaign.doom,
+      doomLine: this.s.campaign.games > 0 ? this.s.campaign.doomLine || null : null,
       games: this.s.campaign.games,
       phase: g ? g.phase : 'lobby',
       day: g?.day || 0,
@@ -763,7 +776,7 @@ export class Engine {
         const done = ['cultist', 'medium', 'occultist'].includes(role) ? !!g.night.acts[id] : !!g.night.explores[id]?.result;
         if (!done) waiting++;
       }
-      v.night = { waiting, total: g.alive.length, spirits: g.night.spiritsAtStart.length };
+      v.night = { waiting, total: g.alive.length, spirits: g.night.spiritsAtStart.length, line: g.nightLine };
     }
     if (g.phase === 'dawn') v.dawnReport = g.dawnReport;
     if (g.phase === 'day' || g.phase === 'vote') {
@@ -772,7 +785,7 @@ export class Engine {
     }
     if (g.phase === 'vote') v.voteProgress = { voted: Object.keys(g.votes).filter((id) => this.alive(id)).length, total: g.alive.length };
     if (g.phase === 'reveal') v.reveal = { ...g.reveal, name: g.reveal.banished ? this.pname(g.reveal.banished) : null, roleInfo: g.reveal.role ? ROLES[g.reveal.role] : null };
-    if (g.phase === 'rising') v.rising = { round: g.rising.round, rounds: g.rising.rounds, successes: g.rising.successes, needed: g.rising.needed, dc: g.rising.dc, lastRolls: g.rising.lastRolls.map((r) => ({ ...r, name: this.pname(r.id) })), picked: Object.keys(g.rising.picks).length, total: g.rising.participants.length };
+    if (g.phase === 'rising') v.rising = { round: g.rising.round, rounds: g.rising.rounds, successes: g.rising.successes, needed: g.rising.needed, dc: g.rising.dc, lastRolls: g.rising.lastRolls.map((r) => ({ ...r, name: this.pname(r.id) })), picked: Object.keys(g.rising.picks).length, total: g.rising.participants.length, line: RISING_ROUNDS[Math.min(g.rising.round - 1, RISING_ROUNDS.length - 1)] };
     if (g.phase === 'gameover') v.ceremony = this.ceremonyView();
     return v;
   }

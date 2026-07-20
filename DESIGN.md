@@ -86,8 +86,9 @@ result). Picking a persona is picking a playstyle.
 ### Night exploration & items
 
 Players without a power action choose a location each night — the docks,
-the library, the graveyard, Hibb's Roadhouse — and get a short narrated
-scene with a choice, Call-of-Cthulhu style. Outcomes (sometimes gated by a
+the library, the graveyard, Hibb's Roadhouse, the Old Chapel, or the
+Asylum Annex — and get a short narrated scene with a choice,
+Call-of-Cthulhu style. Outcomes (sometimes gated by a
 stat check): find an item, gain/lose sanity, or generate flavor that feeds
 the morning narration ("three townsfolk were seen near the docks").
 
@@ -143,6 +144,20 @@ reasons to act suspicious.
 *Arkham Advertiser* cheerfully misreports each horror ("The screaming, the
 paper assures readers, was recreational"). Write 4–5 variants of every
 narration beat so back-to-back games don't repeat lines.
+
+Additional narrative systems layered on top:
+
+- **Persona death scenes** — every persona has a bespoke death report
+  (used for ~half of deaths, generic variants otherwise), so losing
+  Madame Zerelda reads differently from losing Deputy Hobbes.
+- **Night-scene lines** — the TV's night screen rotates atmospheric lines
+  instead of repeating one.
+- **Doom flavor** — the Doom Track carries tiered flavor text (uneasy calm
+  → the brink) shown in the lobby and ceremonies; changes when doom moves.
+- **Between-game interludes** — after each game, a short "what the town did
+  next" passage keyed to the winner (town / cult / lunatic / dawn / old one)
+  bridges into the next game.
+- **Rising narration** — each boss-fight round has its own escalating line.
 
 ## Sound
 

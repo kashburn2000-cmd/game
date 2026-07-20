@@ -48,6 +48,26 @@ function doVote(engine, conns, target) {
   }
 }
 
+// ---------------- content integrity ----------------
+import { LOCATIONS, NARRATION, PERSONAS, DOOM_LINES, INTERLUDES, RISING_ROUNDS, CURSES, WHISPERS } from '../src/engine/content.js';
+section('content integrity');
+for (const [key, loc] of Object.entries(LOCATIONS)) {
+  ok(Array.isArray(NARRATION.flavor[key]) && NARRATION.flavor[key].length > 0, `flavor lines exist for location "${key}"`);
+  for (const scene of loc.scenes) {
+    const shapeOk = scene.choices.length === 2 && scene.choices.every((c) =>
+      c.label && (c.check ? (c.success?.text && c.fail?.text && ['brawn', 'wits', 'nerve'].includes(c.check.stat) && c.check.dc >= 8 && c.check.dc <= 18) : c.outcome?.text));
+    ok(shapeOk, `scene ${key}/${scene.id} well-formed`);
+  }
+}
+ok(PERSONAS.every((p) => p.death && p.death.length > 40), 'every persona has a bespoke death line');
+ok(DOOM_LINES.length === 4 && DOOM_LINES.every((t) => t.length > 0), 'doom lines cover all four tiers');
+ok(['town', 'cult', 'lunatic', 'dawn', 'oldone'].every((w) => INTERLUDES[w]?.length > 0), 'interludes cover every winner');
+ok(RISING_ROUNDS.length === 3, 'rising narration covers three rounds');
+ok(new Set(CURSES.map((c) => c.id)).size === CURSES.length, 'curse ids unique');
+ok(new Set(WHISPERS).size === WHISPERS.length, 'whispers unique');
+const totalScenes = Object.values(LOCATIONS).reduce((a, l) => a + l.scenes.length, 0);
+console.log(`  (content: ${Object.keys(LOCATIONS).length} locations, ${totalScenes} scenes, ${CURSES.length} curses, ${WHISPERS.length} whispers)`);
+
 // ---------------- game 1: full town win at 8 players ----------------
 section('setup: 8 players join');
 const engine = new Engine(newRoom('TEST'));
@@ -137,6 +157,9 @@ g = engine.s.game;
 ok(g.phase === 'gameover', 'game over when cult is gone');
 ok(g.winner === 'town', 'town wins');
 ok(g.ceremony && g.ceremony.roles.length === 8, 'ceremony reveals all roles');
+ok(typeof g.ceremony.interlude === 'string' && g.ceremony.interlude.length > 20, 'ceremony includes an interlude');
+ok(typeof g.ceremony.doomLine === 'string', 'ceremony includes a doom flavor line');
+ok(typeof g.nightLine === 'string', 'night scene line was set');
 ok(engine.s.campaign.games === 1, 'campaign counted the game');
 const townWinners = engine.s.players.filter((p) => ['medium', 'occultist', 'townsfolk'].includes(g.roles[p.id]));
 ok(townWinners.every((p) => (engine.s.campaign.signs[p.id] || 0) >= 3), 'town winners earned elder signs');

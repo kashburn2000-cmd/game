@@ -3,19 +3,33 @@
 // Narration entries are arrays of variants; the engine picks one at random
 // so back-to-back games don't repeat lines.
 
+// Each persona carries a bespoke `death` line — used for some dawn reports so
+// deaths feel personal to the character, not just the player.
 export const PERSONAS = [
-  { id: 'whateley', name: 'Dr. Constance Whateley', job: 'Coroner', icon: '🩺', brawn: 1, wits: 3, nerve: 2, blurb: 'Has never met a corpse she couldn’t make small talk with.' },
-  { id: 'finnegan', name: '"Fish-Eye" Finnegan', job: 'Dockworker', icon: '⚓', brawn: 3, wits: 1, nerve: 2, blurb: 'Saw something in the water in ’19. Won’t say what. Charges a nickel to not say it again.' },
-  { id: 'marsh', name: 'Prof. Edmund Marsh', job: 'Linguist, Miskatonic U.', icon: '📖', brawn: 0, wits: 4, nerve: 1, blurb: 'Fluent in eleven languages, three of which have no living speakers. Or so he hopes.' },
-  { id: 'pryce', name: 'Sister Agatha Pryce', job: 'Asylum Nurse', icon: '🕯️', brawn: 1, wits: 2, nerve: 3, blurb: 'Unshockable. The patients find this comforting. The doctors find it suspicious.' },
-  { id: 'crane', name: 'Silas Crane', job: 'Gravedigger', icon: '⚰️', brawn: 3, wits: 2, nerve: 1, blurb: 'Digs them six feet down and, lately, has started digging them seven.' },
-  { id: 'ashcroft', name: 'Vivian Ashcroft', job: 'Jazz Singer', icon: '🎷', brawn: 1, wits: 2, nerve: 3, blurb: 'Sings at the Roadhouse. The applause is enthusiastic and not entirely human.' },
-  { id: 'hobbes', name: 'Deputy Roy Hobbes', job: 'Lawman', icon: '⭐', brawn: 3, wits: 2, nerve: 1, blurb: 'Enforces the law. Increasingly unsure whose.' },
-  { id: 'zerelda', name: 'Madame Zerelda', job: 'Fortune Teller', icon: '🔮', brawn: 0, wits: 3, nerve: 3, blurb: 'Refunds available if the doom she foretells fails to arrive. Has never issued a refund.' },
-  { id: 'pike', name: 'Chester Pike', job: 'Reporter, Arkham Advertiser', icon: '📰', brawn: 1, wits: 3, nerve: 2, blurb: 'Committed to printing the truth, lightly edited for cheerfulness.' },
-  { id: 'lockwood', name: 'Ada Lockwood', job: 'Librarian', icon: '🗝️', brawn: 0, wits: 4, nerve: 2, blurb: 'Runs the restricted section. Shushes things that should not be shushed.' },
-  { id: 'grey', name: '"Doc" Tobias Grey', job: 'Pharmacist', icon: '⚗️', brawn: 1, wits: 3, nerve: 2, blurb: 'His tonics cure insomnia, melancholy, and — since March — visions of the sea.' },
-  { id: 'calloway', name: 'Ruth Calloway', job: 'Bootlegger', icon: '🥃', brawn: 2, wits: 2, nerve: 2, blurb: 'Moves crates by moonlight. Has strong opinions about what else moves by moonlight.' },
+  { id: 'whateley', name: 'Dr. Constance Whateley', job: 'Coroner', icon: '🩺', brawn: 1, wits: 3, nerve: 2, blurb: 'Has never met a corpse she couldn’t make small talk with.',
+    death: 'Dr. Constance Whateley was found at dawn on her own examination table, arranged with professional care, a toe tag filled out in her own meticulous hand. Cause of death: "see attached." Nothing is attached.' },
+  { id: 'finnegan', name: '"Fish-Eye" Finnegan', job: 'Dockworker', icon: '⚓', brawn: 3, wits: 1, nerve: 2, blurb: 'Saw something in the water in ’19. Won’t say what. Charges a nickel to not say it again.',
+    death: '"Fish-Eye" Finnegan is gone. On his stool at the dock they found a jar of nickels and a note: "It remembered me too." The harbor was glassy calm all night, witnesses say, except in one patient circle.' },
+  { id: 'marsh', name: 'Prof. Edmund Marsh', job: 'Linguist, Miskatonic U.', icon: '📖', brawn: 0, wits: 4, nerve: 1, blurb: 'Fluent in eleven languages, three of which have no living speakers. Or so he hopes.',
+    death: 'Professor Edmund Marsh was last seen in his study, mid-translation. The final word in his notebook is rendered in a beautiful, steady hand — and the ink continues off the page, off the desk, and out under the door.' },
+  { id: 'pryce', name: 'Sister Agatha Pryce', job: 'Asylum Nurse', icon: '🕯️', brawn: 1, wits: 2, nerve: 3, blurb: 'Unshockable. The patients find this comforting. The doctors find it suspicious.',
+    death: 'Sister Agatha Pryce did not report for the night shift. Her patients, every one, woke at 3 a.m. and observed a minute of silence — unprompted, in unison. They refuse to say who suggested it.' },
+  { id: 'crane', name: 'Silas Crane', job: 'Gravedigger', icon: '⚰️', brawn: 3, wits: 2, nerve: 1, blurb: 'Digs them six feet down and, lately, has started digging them seven.',
+    death: 'Silas Crane was taken in the night. His shovel stands upright in a fresh, neat, empty grave — his best work, the town agrees. Seven feet, exactly. The extra foot, it turns out, was for him.' },
+  { id: 'ashcroft', name: 'Vivian Ashcroft', job: 'Jazz Singer', icon: '🎷', brawn: 1, wits: 2, nerve: 3, blurb: 'Sings at the Roadhouse. The applause is enthusiastic and not entirely human.',
+    death: 'Vivian Ashcroft finished her final set to a standing ovation, witnesses say — though nobody remembers standing. She took one encore, one bow, and one step backstage, and the Roadhouse has no backstage.' },
+  { id: 'hobbes', name: 'Deputy Roy Hobbes', job: 'Lawman', icon: '⭐', brawn: 3, wits: 2, nerve: 1, blurb: 'Enforces the law. Increasingly unsure whose.',
+    death: 'Deputy Roy Hobbes made his last rounds at midnight. His badge was returned to the station door with a nail through it and a note in brine-soaked ink: "Jurisdiction settled."' },
+  { id: 'zerelda', name: 'Madame Zerelda', job: 'Fortune Teller', icon: '🔮', brawn: 0, wits: 3, nerve: 3, blurb: 'Refunds available if the doom she foretells fails to arrive. Has never issued a refund.',
+    death: 'Madame Zerelda’s parlor was found in perfect order: cards laid out mid-reading, kettle still warm, and a single nickel on the table — the first refund she ever issued, made out, apparently, to herself.' },
+  { id: 'pike', name: 'Chester Pike', job: 'Reporter, Arkham Advertiser', icon: '📰', brawn: 1, wits: 3, nerve: 2, blurb: 'Committed to printing the truth, lightly edited for cheerfulness.',
+    death: 'Chester Pike filed his last story at 2 a.m. — the presses ran themselves, the night printer swears, and every copy of the morning edition carries a headline that changes when read twice. Of Pike, no trace but his byline, which now appears on the obituary page. Under tomorrow’s date.' },
+  { id: 'lockwood', name: 'Ada Lockwood', job: 'Librarian', icon: '🗝️', brawn: 0, wits: 4, nerve: 2, blurb: 'Runs the restricted section. Shushes things that should not be shushed.',
+    death: 'Ada Lockwood was checked out overnight. That is the only way to describe it: her card sits in the restricted section’s ledger, stamped, with a due date the librarian’s assistant refuses to read aloud.' },
+  { id: 'grey', name: '"Doc" Tobias Grey', job: 'Pharmacist', icon: '⚗️', brawn: 1, wits: 3, nerve: 2, blurb: 'His tonics cure insomnia, melancholy, and — since March — visions of the sea.',
+    death: '"Doc" Tobias Grey’s pharmacy was found unlocked, one tonic bottle empty on the counter. The label, in his handwriting, reads: "For visions of the sea — WORKS." The back door stands open. The trail of wet footprints leads in.' },
+  { id: 'calloway', name: 'Ruth Calloway', job: 'Bootlegger', icon: '🥃', brawn: 2, wits: 2, nerve: 2, blurb: 'Moves crates by moonlight. Has strong opinions about what else moves by moonlight.',
+    death: 'Ruth Calloway missed her own midnight delivery — a first. Her truck sits at the shore road turn, engine running, headlights aimed at the water, cargo untouched. Whatever she moved by moonlight all these years, last night it moved her.' },
 ];
 
 export const ROLES = {
@@ -40,6 +54,10 @@ export const CURSES = [
   { id: 'stand', text: 'Must stand while speaking' },
   { id: 'noquestions', text: 'Cannot ask questions' },
   { id: 'dearfolk', text: 'Must address the group as "dear townsfolk" when speaking' },
+  { id: 'seaward', text: 'Must face the nearest window while speaking' },
+  { id: 'echo', text: 'Must repeat the last word of every sentence, twice, quietly' },
+  { id: 'nautical', text: 'Must work a nautical term into every statement' },
+  { id: 'formal', text: 'Must address everyone by full persona name and title' },
 ];
 
 // ---- Spirit whispers (curated — spirits can never type free text) ----
@@ -56,6 +74,12 @@ export const WHISPERS = [
   'The librarian knows. The librarian always knows.',
   'Check under the floorboards. Not those. The other ones.',
   'You banished the wrong one once. You will again.',
+  'The quiet one is counting you.',
+  'Ask about the smell. Go on. Ask.',
+  'We can see your cards from up here. All of them.',
+  'The tide took me. The tide had HELP.',
+  'Whoever speaks next is lying. Or was it the one after. It gets muddled, being dead.',
+  'Save your vote. Spend your suspicion.',
 ];
 
 // ---- Items ----
@@ -95,6 +119,20 @@ export const LOCATIONS = {
             fail: { sanity: -2, text: 'You listen too long. For the rest of the night the song hums along inside your teeth.', tag: 'docks' } },
           { label: 'Hum something louder', outcome: { sanity: 1, text: 'You drown it out with a show tune. The singing stops, offended. A small, ridiculous victory.', tag: 'docks' } },
         ] },
+      { id: 'ferryman', text: 'At the last slip, a rowboat waits with a lit lantern and no rower. A hand-painted sign lists the fare. The fare is not money.',
+        choices: [
+          { label: 'Take the lantern', check: { stat: 'nerve', dc: 12 },
+            success: { item: 'amulet', sanity: -1, text: 'You lift the lantern. Beneath it, a stone charm — a tip, perhaps, from a previous passenger who chose not to ride.', tag: 'docks' },
+            fail: { sanity: -1, text: 'As your fingers close on the handle, the boat rocks — politely, like a chair being pulled out for you. You decline at speed.', tag: 'docks' } },
+          { label: 'Pay nothing, take nothing', outcome: { sanity: 1, text: 'You tip your hat to the empty boat and keep walking. Behind you, oars creak. You do not turn around, and are proud of that forever.', tag: 'docks' } },
+        ] },
+      { id: 'icehouse', text: 'The ice house door is ajar. Inside, last week’s catch lies packed in sawdust and frost — and one of the fish is, very faintly, still singing.',
+        choices: [
+          { label: 'Find the singing fish', check: { stat: 'wits', dc: 12 },
+            success: { item: 'flask', sanity: -1, text: 'You find it. It looks at you with a grandfather’s patience and stops singing, embarrassed. Behind the crate: the ice-man’s medicinal whiskey. You feel you’ve earned it.', tag: 'docks' },
+            fail: { sanity: -1, text: 'The song stops the moment you get close — and starts again from a different crate. Then two crates. Then all of them, in harmony.', tag: 'docks' } },
+          { label: 'Shut the door firmly', outcome: { sanity: 1, text: 'Not every mystery deserves a witness. You wedge the door with a gaff hook and sleep the sleep of the sensibly incurious.', tag: 'docks' } },
+        ] },
     ],
   },
   library: {
@@ -120,6 +158,20 @@ export const LOCATIONS = {
             success: { item: 'amulet', sanity: -1, text: 'Every edition since 1919 differs. Tucked in the newest one: a stone charm and a bookmark reading "for the flood."', tag: 'library' },
             fail: { sanity: -1, text: 'The ink is not dry. The ink, you realize, is never dry.', tag: 'library' } },
           { label: 'Close the atlas', outcome: { sanity: 0, text: 'Maps are only opinions, you decide. The sea has opinions too, but louder.', tag: 'library' } },
+        ] },
+      { id: 'overdue', text: 'An overdue notice waits on the counter, addressed to you. The book — "Rites of the Drowned Choir" — was checked out in your name, forty years before you were born.',
+        choices: [
+          { label: 'Pay the fine', check: { stat: 'nerve', dc: 11 },
+            success: { item: 'press', sanity: 0, text: 'You count out four decades of late fees in nickels. The ledger accepts them, closes itself, and leaves you a receipt with tomorrow’s date. Useful, that.', tag: 'library' },
+            fail: { sanity: -1, text: 'The fine, recalculated with interest, is listed in years. You leave before learning whose.', tag: 'library' } },
+          { label: 'Dispute the charge', outcome: { sanity: 1, text: '"I wasn’t alive," you write firmly on the notice, and feel much better. Bureaucracy is a kind of warding sigil, if you believe hard enough.', tag: 'library' } },
+        ] },
+      { id: 'children', text: 'In the children’s corner, every picture book has been lovingly redrawn. The three bears now live under the sea. So does everyone, eventually, in these editions.',
+        choices: [
+          { label: 'Study the artist’s hand', check: { stat: 'wits', dc: 12 },
+            success: { item: 'gravedirt', sanity: -1, text: 'The brushwork matches the gravestones’ newest carvings. You take a rubbing. The spirits will appreciate the attribution.', tag: 'library' },
+            fail: { sanity: -2, text: 'The last page of every book shows the same drawing: this library, this corner, tonight — and someone standing exactly where you stand.', tag: 'library' } },
+          { label: 'Shelve them spine-in', outcome: { sanity: 1, text: 'You hide the lot behind the almanacs. The children of Arkham will grow up frightened of normal, wholesome things, as is right.', tag: 'library' } },
         ] },
     ],
   },
@@ -147,6 +199,20 @@ export const LOCATIONS = {
             fail: { sanity: -1, text: 'As you reach out, a fresh name appears on the list. You do not stay to read it.', tag: 'graveyard' } },
           { label: 'Read the list only', outcome: { sanity: -1, text: 'You recognize every name still standing. You are between two of them.', tag: 'graveyard' } },
         ] },
+      { id: 'mourner', text: 'A figure in black weeps at a headstone with no name on it. The grave is old. The grief sounds brand new.',
+        choices: [
+          { label: 'Offer comfort', check: { stat: 'nerve', dc: 12 },
+            success: { item: 'gravedirt', sanity: 0, text: 'You sit with them until the crying stops. "You’re kind," they say, in a voice like wet gravel, and press a handful of grave dirt into your palm. "For the others. They owe me a favor now."', tag: 'graveyard' },
+            fail: { sanity: -2, text: 'You put a hand on their shoulder. There is no shoulder. The coat holds its shape out of habit and, you sense, politeness.', tag: 'graveyard' } },
+          { label: 'Mourn from a distance', outcome: { sanity: 1, text: 'You stand quietly with your hat off, at a range you can live with. Respect and self-preservation, in perfect balance.', tag: 'graveyard' } },
+        ] },
+      { id: 'potters', text: 'In potter’s field, the unmarked graves are humming — low and content, like a kitchen before a holiday.',
+        choices: [
+          { label: 'Press your ear to the earth', check: { stat: 'wits', dc: 13 },
+            success: { item: 'press', sanity: -1, text: 'The humming is gossip. The dead discuss the living with terrible accuracy, and you memorize the best of it before your nerve gives out.', tag: 'graveyard' },
+            fail: { sanity: -2, text: 'The humming stops. All of it. The silence has the specific texture of many people listening back.', tag: 'graveyard' } },
+          { label: 'Hum along walking past', outcome: { sanity: 1, text: 'You harmonize, badly. The graves forgive you. Somewhere below, something taps time with what is hopefully a foot.', tag: 'graveyard' } },
+        ] },
     ],
   },
   roadhouse: {
@@ -173,6 +239,72 @@ export const LOCATIONS = {
             fail: { sanity: -2, text: 'The knocking stops the moment the lock gives — which is, you realize far too late, much worse.', tag: 'roadhouse' } },
           { label: 'Add a second padlock', outcome: { sanity: 1, text: 'Problems you can lock in a cellar are the very best kind of problem.', tag: 'roadhouse' } },
         ] },
+      { id: 'piano', text: 'The player piano is playing with its lid open. The scroll inside is blank. The keys move anyway, and the tune keeps almost resolving.',
+        choices: [
+          { label: 'Finish the tune yourself', check: { stat: 'nerve', dc: 12 },
+            success: { item: 'flask', sanity: 1, text: 'You sit down and hammer out the final chord the thing keeps flinching from. The piano sighs. The bar applauds. Hibb stands you a bottle for "exorcism services."', tag: 'roadhouse' },
+            fail: { sanity: -1, text: 'You reach for the keys and they pull away — all eighty-eight, together, like a mouth deciding not to be touched.', tag: 'roadhouse' } },
+          { label: 'Close the lid gently', outcome: { sanity: 1, text: 'The piano accepts this with dignity and switches to humming through its strings, much quieter. A compromise everyone can live with.', tag: 'roadhouse' } },
+        ] },
+      { id: 'regular', text: 'The man at the end of the bar has been "just leaving" since 1917, according to Hibb. His glass is always full. Nobody fills it.',
+        choices: [
+          { label: 'Buy him a round', check: { stat: 'nerve', dc: 11 },
+            success: { item: 'press', sanity: 0, text: 'He talks. Oh, how he talks. Nine years of watching this town from one stool, and he remembers every face that came in smelling of low tide. You take notes.', tag: 'roadhouse' },
+            fail: { sanity: -1, text: 'He turns to thank you. You did not know a face could be so profoundly the back of a head.', tag: 'roadhouse' } },
+          { label: 'Respect the arrangement', outcome: { sanity: 1, text: 'You nod to him as one nods to a lighthouse: gratefully, and from a distance. He nods back without moving.', tag: 'roadhouse' } },
+        ] },
+    ],
+  },
+  church: {
+    name: 'The Old Chapel', icon: '⛪',
+    scenes: [
+      { id: 'collection', text: 'The Esoteric Order’s chapel is unlocked for "night confession." The collection plate by the door holds teeth, a compass that points down, and one perfect pearl.',
+        choices: [
+          { label: 'Take the pearl', check: { stat: 'nerve', dc: 13 },
+            success: { item: 'amulet', sanity: -1, text: 'Your fingers close on the pearl and it is not a pearl, it is a stone charm someone gave up. The plate rattles once — annoyed, but rules are rules.', tag: 'church' },
+            fail: { sanity: -2, text: 'Your hand stops above the plate. Every candle in the chapel leans toward you, attentively, like a congregation.', tag: 'church' } },
+          { label: 'Donate a button', outcome: { sanity: 1, text: 'You add a coat button to the plate. Somewhere behind the altar, something purrs. You have tithed. You are, technically, in good standing.', tag: 'church' } },
+        ] },
+      { id: 'choir', text: 'Choir practice, the sign says, WEDNESDAYS. It is not Wednesday. The pews are empty. The choir is magnificent.',
+        choices: [
+          { label: 'Sing the descant', check: { stat: 'nerve', dc: 12 },
+            success: { item: 'gravedirt', sanity: 0, text: 'You join in from the back row. The unseen choir parts around your voice like water around a stone, delighted. Afterward, a small bag of consecrated earth waits on your pew. A welcome gift.', tag: 'church' },
+            fail: { sanity: -2, text: 'You hum two notes. The choir stops. A single voice near your left ear finishes your phrase, correcting your pitch.', tag: 'church' } },
+          { label: 'Leave before the sermon', outcome: { sanity: 1, text: 'You genuflect to nothing in particular and back out the door. Faith is knowing when a service is not for you.', tag: 'church' } },
+        ] },
+      { id: 'window', text: 'The new stained-glass window depicts the harbor. In the glass, the congregation stands on the beach, facing the water. Tonight, several of the little glass figures are facing the town.',
+        choices: [
+          { label: 'Count the figures', check: { stat: 'wits', dc: 13 },
+            success: { item: 'press', sanity: -1, text: 'You count. You compare against the parish register in the vestry. The window is a census, and it is more current than the register.', tag: 'church' },
+            fail: { sanity: -2, text: 'You lose count at thirty because one of the figures is wearing your coat.', tag: 'church' } },
+          { label: 'Draw the curtain', outcome: { sanity: 1, text: 'Some art is improved by not being looked at. The curtain rings screech agreement.', tag: 'church' } },
+        ] },
+    ],
+  },
+  asylum: {
+    name: 'The Asylum Annex', icon: '🛏️',
+    scenes: [
+      { id: 'room13', text: 'Room 13 has been empty for a month, but the orderlies still bring meals. The padded walls are covered in scratched columns of numbers — a tide table, decades long, ending this year.',
+        choices: [
+          { label: 'Copy the final column', check: { stat: 'wits', dc: 12 },
+            success: { item: 'press', sanity: -1, text: 'You copy the last figures by matchlight. Whoever scratched them knew the harbor better than the harbor does. This is leverage, if you live to use it.', tag: 'asylum' },
+            fail: { sanity: -2, text: 'Halfway down the column you realize the numbers aren’t predicting the tide. They’re counting attendance.', tag: 'asylum' } },
+          { label: 'Eat the abandoned supper', outcome: { sanity: 1, text: 'The soup is still warm. It is, honestly, the best meal you’ve had all week, and you refuse to examine any part of that sentence.', tag: 'asylum' } },
+        ] },
+      { id: 'interview', text: 'A patient in the dayroom is awake, calm, and expecting you. "Sit," she says. "You want to know who to trust. I keep a list."',
+        choices: [
+          { label: 'Ask for the list', check: { stat: 'nerve', dc: 13 },
+            success: { item: 'gravedirt', sanity: -1, text: '"Trust the dead," she says, bored by your disappointment. "They’ve stopped lying." She gives you a twist of paper: grave dirt, pre-measured. "Tell them Marguerite says hello."', tag: 'asylum' },
+            fail: { sanity: -1, text: 'She recites a list of names — everyone at your party tonight — in the exact order, she says pleasantly, "that it will happen."', tag: 'asylum' } },
+          { label: 'Just chat about the weather', outcome: { sanity: 1, text: 'You discuss the fog for half an hour. She has strong, sensible opinions. It is the sanest conversation available in Arkham, and you both know it.', tag: 'asylum' } },
+        ] },
+      { id: 'nightlog', text: 'The night nurse’s log lies open at the desk. Every entry for the past week ends the same way: "All quiet. All accounted for. One extra."',
+        choices: [
+          { label: 'Take a headcount yourself', check: { stat: 'brawn', dc: 12 },
+            success: { item: 'flask', sanity: 0, text: 'You walk every ward, counting, ready for anything. The count comes out even — and on the last bed sits the night nurse’s medicinal brandy, abandoned mid-shift. Finders keepers.', tag: 'asylum' },
+            fail: { sanity: -2, text: 'You count twice. The first count is one high. The second is one low. Somewhere between the wards, the difference is moving.', tag: 'asylum' } },
+          { label: 'Add "sounds fine" and leave', outcome: { sanity: 1, text: 'You initial the log like a professional. If the extra one wanted to be counted, it would hold still.', tag: 'asylum' } },
+        ] },
     ],
   },
 };
@@ -198,6 +330,19 @@ export const NARRATION = {
     (day) => `Night ${day} settles over Arkham like a tarp over a birdcage. The town goes quiet. The bay does not.`,
     (day) => `Night ${day}. The fog rolls in off the water carrying the smell of low tide and old promises.`,
     (day) => `Night ${day}. Doors are locked, prayers are said, and neither precaution has a strong track record here.`,
+    (day) => `Night ${day}. The moon rises over the harbor and, after a visible moment of consideration, keeps its distance.`,
+    (day) => `Night ${day}. Somewhere a dog barks twice, reconsiders its position, and spends the rest of the night under a porch.`,
+  ],
+  // Shown on the TV while the town acts at night — pure atmosphere.
+  nightScene: [
+    `The town sleeps. Some of it works.`,
+    `Curtains twitch. Floorboards confess. The fog takes attendance.`,
+    `Every window in Arkham is dark, which is not the same as empty.`,
+    `The harbor bell does not ring. Everyone lies awake, waiting for it not to ring again.`,
+    `Out past the breakwater, a light answers a light that nobody lit.`,
+    `The streets belong to the fog now. The fog is generous. The fog shares.`,
+    `In the churchyard, the grass leans against the wind, listening.`,
+    `Midnight passes. Then, by several accounts, passes again.`,
   ],
   dawnDeath: [
     (n) => `Dawn. ${P(n)} was found at first light, raving at the tide in a language the tide seemed to understand. They are gone — though not, perhaps, entirely quiet.`,
@@ -205,6 +350,8 @@ export const NARRATION = {
     (n) => `The town wakes one soul lighter. ${P(n)}'s door stands open, their breakfast laid, their chair still warm, their whereabouts a matter for theologians.`,
     (n) => `${P(n)} did not come home last night. The harbor bell rang once at 3 a.m., by itself, in what witnesses describe as "a satisfied way."`,
     (n) => `At dawn they found ${P(n)}'s lantern at the water line, still lit, illuminating a single line of footprints that walk INTO the bay and do not walk back out.`,
+    (n) => `${P(n)} is gone. Their neighbors heard nothing, which they insist on repeatedly, in the too-loud voices of people who heard something.`,
+    (n) => `The milkman found ${P(n)}'s bottles untaken and their front door replaced — same door, same hinges, but now it only opens outward, and nobody can say what that means, and nobody wants to.`,
   ],
   dawnWard: [
     (n) => `In the small hours, something came for ${P(n)} — and found the sigils on their door burning bright. The scratching lasted until four, then stopped, disappointed.`,
@@ -220,6 +367,7 @@ export const NARRATION = {
     (n, c) => `The Restless Spirits have taken an interest in ${P(n)}. Until dusk: ${c}. The dead have a sense of humor. It did not improve with death.`,
     (n, c) => `A cold spot follows ${P(n)} this morning, and with it, a compulsion: ${c}. The spirits watch, delighted.`,
     (n, c) => `${P(n)} has been HAUNTED. The terms, scratched in frost on their mirror: ${c}.`,
+    (n, c) => `${P(n)} woke to every clock in the house showing a different wrong time and one shared demand: ${c}. The dead were bored. Now they have a hobby.`,
   ],
   quirk: [
     (n, c) => `${P(n)}'s mind, sadly, has given way. A lasting madness takes root: ${c}. The asylum sends its regards and a pamphlet.`,
@@ -229,6 +377,7 @@ export const NARRATION = {
     () => `The town cannot agree, and the tied vote dissolves into shoving. No one is banished. Somewhere beneath the bay, something chuckles at democracy.`,
     () => `A tie. The meeting ends with pointed fingers and nothing done — a proud Arkham tradition. No one is banished.`,
     () => `Deadlock. The townsfolk glare at one another and disperse. The only winner today is the thing in the water.`,
+    () => `The vote splits clean down the middle, like something bitten. No one is banished, and everyone walks home the long way, in pairs, watching each other.`,
   ],
   banishInnocent: [
     (n, r) => `The town drags ${P(n)} to the crossroads and casts them out. In their pockets: nothing but ${r === 'lunatic' ? 'asylum release papers, dated tomorrow' : 'a library card and an honest life'}. The town has made a terrible mistake. Again.`,
@@ -267,26 +416,97 @@ export const NARRATION = {
     `Classifieds: FOUND — one rowboat, returned to dock overnight, oars dry, hull warm. Owner need not come forward.`,
     `The Advertiser notes the asylum's annual gala was "well attended, twice, by the same guests."`,
     `Public notice: the lighthouse keeper wishes it known that whatever is flashing back at him, he did not start it.`,
+    `The Advertiser's advice column counsels "Sleepless on Saltonstall St." to simply stop listening at the floor.`,
+    `Sports: the rowing club has canceled practice indefinitely, citing "a strong headwind" on a windless day.`,
+    `The Advertiser reports the town meeting ran long, owing to "spirited debate and one attendee nobody invited or remembers leaving."`,
+    `Real estate: waterfront property values continue to climb, as does the waterfront.`,
+    `The Advertiser thanks its loyal subscribers, its advertisers, and the third thing.`,
+    `Society pages: the Ladies' Auxiliary bake sale sold out by noon, except for one pie that no one will approach.`,
   ],
   flavor: {
     docks: [
       `Lantern light was seen bobbing along the docks long after midnight.`,
       `The harbormaster reports his ledger "rearranged, but respectfully."`,
+      `Three separate residents swear the tide came in twice last night.`,
     ],
     library: [
       `The library lights burned late; the librarian denies scheduling this.`,
       `Several books were found reshelved in an order that spells something.`,
+      `The restricted section requested — in writing — that patrons stop visiting.`,
     ],
     graveyard: [
       `Fresh footprints wander the graveyard rows — pacing, or measuring.`,
       `The sexton found his spades cleaned and returned. He owns no spades.`,
+      `The graveyard gate was found latched from the inside.`,
     ],
     roadhouse: [
       `The Roadhouse band played until dawn for a crowd that cast too few shadows.`,
       `Hibb's went through a week of whiskey in one night. Nobody remembers drinking it.`,
+      `The Roadhouse piano refused requests all evening, which is new, because nobody plays it.`,
+    ],
+    church: [
+      `The chapel candles burned all night without shrinking an inch.`,
+      `Late passersby heard the choir rehearsing. The choir disbanded in 1911.`,
+      `The chapel bell rang thirteen. The bell-ringer was home in bed, counting along in horror.`,
+    ],
+    asylum: [
+      `The asylum reports a quiet night, an even headcount, and one extra.`,
+      `Lights moved between the asylum wards in a pattern the night nurse described as "deliberate."`,
+      `A patient asked the morning orderly to pass along congratulations. She would not say to whom.`,
     ],
   },
 };
+
+// ---- Doom Track flavor: index by Math.min(3, floor(doom / 3)) ----
+export const DOOM_LINES = [
+  [ // 0-2: uneasy calm
+    `The bay is quiet. The town calls this "peace" and the fishermen call it "holding its breath."`,
+    `Doom recedes, for now. The tide charts almost make sense again.`,
+  ],
+  [ // 3-5: something stirring
+    `The fog has started arriving early and leaving late, like it's been given a key.`,
+    `Salt rings appear on doorsteps overnight. Nobody admits to leaving them. Nobody wipes them away, either.`,
+  ],
+  [ // 6-8: dire
+    `The water in every glass in Arkham leans, very slightly, toward the sea.`,
+    `Birds now cross the town at altitude, without stopping, in silence, in apology.`,
+  ],
+  [ // 9-10: the brink
+    `At night the stars rearrange, patiently, like an orchestra tuning. The performance is soon.`,
+    `The bay no longer bothers with tides. It simply watches. High water is a matter of appetite now.`,
+  ],
+];
+
+// ---- Between-game interludes, keyed by the last game's winner ----
+export const INTERLUDES = {
+  town: [
+    `Between horrors, Arkham does what Arkham does: it holds a potluck. The survivors compare notes, the Advertiser prints a triumphant and largely fictional account, and for one evening the fog keeps a respectful distance.`,
+    `The town breathes. Shops reopen. The banished cultists' houses are auctioned off, and the auctioneer talks very quickly past the question of why every room smells of kelp.`,
+    `A quiet season follows. The church bells ring on schedule, the tide behaves, and the town almost forgets — which, the old-timers mutter, is exactly how it starts again.`,
+  ],
+  cult: [
+    `The ritual's echo settles over the town like ash. Survivors speak of that season only as "the wet spring." New faces appear at the chapel. Old faces appear — briefly, at windows — where no faces should be.`,
+    `The cult's victory buys the deep something it wanted. The harbor gains a new sandbar shaped disturbingly like a welcome mat, and the town, bruised but stubborn, begins again.`,
+    `In the weeks after, nobody says the word "cult" out loud. They say "the club," or "them," or nothing, and they re-lay the wards, and they wait.`,
+  ],
+  lunatic: [
+    `The Lunatic's departure beyond the wards is later described as "the happiest exile in town history." They send postcards. The postcards arrive damp. Everyone else sits with what they did for a long, long time.`,
+    `Committed at last — by popular vote, no less — the Lunatic writes a bestselling memoir. The town would sue, but every word of it is true, and that's the problem.`,
+  ],
+  dawn: [
+    `They will sing about that night — quietly, in daylight, with the doors locked. The thing went back down. The town stood up. Arkham buys itself a round for approximately a decade.`,
+  ],
+  oldone: [
+    `There is no interlude. There is water where the interlude used to be.`,
+  ],
+};
+
+// ---- The Rising: round-by-round narration ----
+export const RISING_ROUNDS = [
+  `The bay stands up. It has been practicing. Barricade, chant, or stare it down — but do it NOW.`,
+  `Half the sky is occupied. The chant is working — or it's applause. Hold the line either way.`,
+  `The final verse. The stars lean in. Whatever you have left, Arkham — spend it.`,
+];
 
 export const TITLES = [
   { id: 'paranoid', name: 'Most Paranoid', desc: 'voted against the most innocents' },

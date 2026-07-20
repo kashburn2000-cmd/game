@@ -151,6 +151,7 @@
           </div>
           ${playerStrip}
           ${v.games > 0 ? doomTrack(v.doom) + signsBoard(v) : ''}
+          ${v.doomLine ? `<p class="narr">${esc(v.doomLine)}</p>` : ''}
           <p class="hint">${v.players.length < 4 ? 'Waiting for at least 4 souls…' : 'The host’s phone bears the ⭐ — they may deal the roles.'}</p>`;
         break;
       case 'night':
@@ -158,7 +159,7 @@
           <div class="scene night">
             <div class="moon">🌙</div>
             <h2 class="phasetitle">NIGHT ${v.day}</h2>
-            <p class="narr">The town sleeps. Some of it works.</p>
+            <p class="narr">${esc(v.night?.line || 'The town sleeps. Some of it works.')}</p>
             <p class="waiting">${v.night ? `${v.night.waiting} soul${v.night.waiting === 1 ? '' : 's'} still stirring…` : ''}</p>
             ${v.night?.spirits ? `<p class="hint">👻 the ${v.night.spirits} restless dead confer on a haunting…</p>` : ''}
             <div class="timer tiny" data-deadline="${v.deadline}"></div>
@@ -215,7 +216,7 @@
           <div class="scene rising">
             <div class="oldone">🐙</div>
             <h2 class="phasetitle doomtext">THE RISING — ROUND ${r.round} of ${r.rounds}</h2>
-            <p class="narr">All of Arkham — the living, the dead, and the deeply embarrassed cultists — stands together.</p>
+            <p class="narr">${esc(r.line || 'All of Arkham — the living, the dead, and the deeply embarrassed cultists — stands together.')}</p>
             <div class="risingbar"><div class="risingfill" style="width:${Math.min(100, (r.successes / r.needed) * 100)}%"></div>
               <span class="risinglabel">${r.successes} / ${r.needed} rites completed · need ${r.dc}+ on the die</span></div>
             <p class="waiting">${r.picked} / ${r.total} have chosen their stand</p>
@@ -242,7 +243,9 @@
               </div>
             </div>
             ${doomTrack(c.doom ?? v.doom)}
+            ${c.doomLine ? `<p class="narr">${esc(c.doomLine)}</p>` : ''}
             ${signsBoard(v)}
+            ${c.interlude ? `<div class="parchment interlude"><p>${esc(c.interlude)}</p></div>` : ''}
             <p class="hint">The host may deal the next game from their phone. The bay is patient.</p>
           </div>`;
         break;
