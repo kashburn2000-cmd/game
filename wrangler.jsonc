@@ -1,7 +1,9 @@
 {
   // Cloudflare Workers config for Strange Is the Night.
   // Deploy with: npx wrangler deploy   (see README.md for the friendly guide)
-  "name": "strange-is-the-night",
+  // Must match the Worker's name in the Cloudflare dashboard (set during
+  // the Git import). Cosmetic only — the public address is the domain below.
+  "name": "game",
   "main": "src/worker.js",
   "compatibility_date": "2026-07-01",
   // The game's home. Deploying auto-attaches these domains — they just need
