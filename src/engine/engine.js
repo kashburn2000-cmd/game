@@ -230,10 +230,10 @@ export class Engine {
     const g = this.g;
     if (!g || g.phase !== 'night' || !this.alive(pid)) return;
     const role = this.role(pid);
-    if (!['cultist', 'medium', 'occultist'].includes(role)) return;
+    if (!['cultist', 'medium', 'occultist', 'archivist'].includes(role)) return;
     if (!this.alive(target)) return;
     if (role === 'cultist' && this.role(target) === 'cultist') return;
-    if (role === 'medium' && target === pid) return;
+    if ((role === 'medium' || role === 'archivist') && target === pid) return;
     const act = { target };
     if (role === 'medium') {
       const tr = this.role(target);
@@ -247,7 +247,7 @@ export class Engine {
     const g = this.g;
     if (!g || g.phase !== 'night' || !this.alive(pid)) return;
     const role = this.role(pid);
-    if (['cultist', 'medium', 'occultist'].includes(role)) return;
+    if (['cultist', 'medium', 'occultist', 'archivist'].includes(role)) return;
     if (!LOCATIONS[location]) return;
     if (g.night.explores[pid]?.result) return; // already resolved tonight
     const seen = (g.seenScenes[pid] = g.seenScenes[pid] || []);
@@ -308,7 +308,7 @@ export class Engine {
     const g = this.g;
     for (const id of g.alive) {
       const role = this.role(id);
-      if (['cultist', 'medium', 'occultist'].includes(role)) {
+      if (['cultist', 'medium', 'occultist', 'archivist'].includes(role)) {
         if (!g.night.acts[id]) return;
       } else {
         if (!g.night.explores[id]?.result) return;
@@ -359,6 +359,17 @@ export class Engine {
       g.spirits.push(death);
       g.alive.forEach((id) => { if (this.role(id) !== 'cultist') this.loseSanity(id, 0); });
       this.fx('death');
+    }
+
+    // The Archivist's records: did their target leave an entry tonight?
+    const archId = g.alive.concat(g.spirits).find((id) => this.role(id) === 'archivist');
+    const archAct = archId ? g.night.acts[archId] : null;
+    if (archId && archAct) {
+      const ex = g.night.explores[archAct.target];
+      g.lastArchive = {
+        by: archId, target: archAct.target, day: g.day,
+        loc: ex?.result ? LOCATIONS[ex.loc].name : null,
+      };
     }
 
     // Haunting (spirits from the start of night vote; grave dirt overrides).
@@ -773,7 +784,7 @@ export class Engine {
       let waiting = 0;
       for (const id of g.alive) {
         const role = this.role(id);
-        const done = ['cultist', 'medium', 'occultist'].includes(role) ? !!g.night.acts[id] : !!g.night.explores[id]?.result;
+        const done = ['cultist', 'medium', 'occultist', 'archivist'].includes(role) ? !!g.night.acts[id] : !!g.night.explores[id]?.result;
         if (!done) waiting++;
       }
       v.night = { waiting, total: g.alive.length, spirits: g.night.spiritsAtStart.length, line: g.nightLine };
@@ -841,14 +852,14 @@ export class Engine {
     }
 
     if (g.phase === 'night' && you.alive) {
-      if (['cultist', 'medium', 'occultist'].includes(role)) {
+      if (['cultist', 'medium', 'occultist', 'archivist'].includes(role)) {
         const act = g.night.acts[pid];
         you.nightUI = {
           kind: role,
           submitted: !!act,
           targetName: act ? this.pname(act.target) : null,
           mediumResult: role === 'medium' && act ? act.result : null,
-          targets: g.alive.filter((id) => (role === 'cultist' ? this.role(id) !== 'cultist' : role === 'medium' ? id !== pid : true)).map((id) => ({ id, name: this.pname(id) })),
+          targets: g.alive.filter((id) => (role === 'cultist' ? this.role(id) !== 'cultist' : (role === 'medium' || role === 'archivist') ? id !== pid : true)).map((id) => ({ id, name: this.pname(id) })),
         };
       } else {
         const ex = g.night.explores[pid];
@@ -877,8 +888,8 @@ export class Engine {
     if (g.phase === 'vote' && you.alive) {
       you.voteUI = { submitted: !!g.votes[pid], choice: g.votes[pid] || null, targets: g.alive.filter((id) => id !== pid).map((id) => ({ id, name: this.pname(id) })) };
     }
-    if (g.phase === 'reveal' && role === 'archivist' && g.reveal?.banished) {
-      you.archivist = { name: this.pname(g.reveal.banished), role: ROLES[g.reveal.role]?.name };
+    if (role === 'archivist' && g.lastArchive?.by === pid) {
+      you.archive = { name: this.pname(g.lastArchive.target), loc: g.lastArchive.loc, day: g.lastArchive.day };
     }
     if (g.phase === 'rising' && g.rising.participants.includes(pid)) {
       you.risingUI = { picked: !!g.rising.picks[pid], stats: this.persona(p) || { brawn: 1, wits: 1, nerve: 1 }, canSpend: (g.items[pid] || []).length > 0, round: g.rising.round, rounds: g.rising.rounds };

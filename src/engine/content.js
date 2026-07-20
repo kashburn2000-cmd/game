@@ -39,7 +39,7 @@ export const ROLES = {
   townsfolk: { name: 'Townsfolk', icon: '🏚️', team: 'town', desc: 'No powers — only wits, paranoia, and a vote. Explore the town by night; argue by day. Banish both cultists to win.' },
   lunatic:   { name: 'Lunatic',   icon: '🎭', team: 'lunatic', desc: 'The asylum misses you. You win — alone, instantly — if the town votes to banish you. Act suspicious. But not TOO suspicious.' },
   hybrid:    { name: 'Deep One Hybrid', icon: '🐟', team: 'town', desc: 'You are innocent — but the sea is in your blood, and the Medium will see you as a cultist. Good luck explaining that.' },
-  archivist: { name: 'Archivist', icon: '📜', team: 'town', desc: 'You keep the true records. Whenever someone is banished, you privately learn their real role moments before the town does.' },
+  archivist: { name: 'Archivist', icon: '📜', team: 'town', desc: 'You keep the town’s records. Each night, consult them on one soul: at dawn you learn where they went — or that NO ENTRY exists. Honest folk leave records. The busy ones don’t.' },
 };
 
 // ---- Haunting curses (also reused as madness quirks) ----

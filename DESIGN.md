@@ -32,7 +32,7 @@ Dealt secretly to phones at game start.
 | Role | Power |
 |---|---|
 | **Deep One Hybrid** | Innocent townsfolk, but the Medium sees them as a cultist. |
-| **Archivist** | Privately learns each banished player's true role before the public TV reveal. |
+| **Archivist** | Each night, consults the town records on one player: at dawn, learns where they explored — or that NO ENTRY exists. Explorers leave records; cultists, the Medium, and the Occultist don't. A lie-detector for "where were you last night?" |
 
 ## Game flow
 

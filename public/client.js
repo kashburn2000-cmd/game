@@ -298,6 +298,7 @@
     ${y.curse?.broken ? `<div class="cursecard broken">👻 Curse broken — your vote today is forfeit.</div>` : ''}
     ${(y.quirks || []).length ? `<div class="quirkcard">🧠 <b>Madness:</b> ${y.quirks.map(esc).join(' · ')}</div>` : ''}
     ${y.objective ? `<div class="objcard ${y.objective.done ? 'done' : ''}">🗝 <b>Secret quest:</b> ${esc(y.objective.text)} ${y.objective.done ? '✅ done (+2✴)' : ''}</div>` : ''}
+    ${y.archive ? `<div class="presscard">📜 <b>THE RECORDS — NIGHT ${y.archive.day}</b><br>${esc(y.archive.name)}: ${y.archive.loc ? 'an entry at <b>' + esc(y.archive.loc) + '</b>.' : '<b>NO ENTRY.</b> They were busy elsewhere…'}</div>` : ''}
     ${itemCards(y)}`;
 
   function itemCards(y) {
@@ -334,13 +335,14 @@
     if (!y.alive) return `<p class="hint">You are beyond such things now.</p>`;
     const ui = y.nightUI;
     if (!ui) return `<h2>NIGHT ${v.day}</h2><p class="hint">You sleep. Lucky you.</p>${statusCards(y)}`;
-    if (['cultist', 'medium', 'occultist'].includes(ui.kind)) {
+    if (['cultist', 'medium', 'occultist', 'archivist'].includes(ui.kind)) {
       if (ui.submitted) {
         let extra = '';
         if (ui.kind === 'medium') extra = `<div class="divined ${ui.mediumResult ? 'bad' : 'good'}">${ui.mediumResult ? '🐙 The cards scream. <b>' + esc(ui.targetName) + '</b> walks with the cult.' : '🃏 The cards are calm. <b>' + esc(ui.targetName) + '</b> is not of the cult.'}<br><small>(A Deep One Hybrid also reads as cult…)</small></div>`;
+        if (ui.kind === 'archivist') extra = `<p class="hint">📜 The records on <b>${esc(ui.targetName)}</b> will surface at dawn.</p>`;
         return `<h2>NIGHT ${v.day}</h2>${roleCard(y)}<p class="hint">Your work is done: <b>${esc(ui.targetName)}</b>.</p>${extra}<p class="hint">Wait for dawn. Try to look innocent.</p>`;
       }
-      const prompt = ui.kind === 'cultist' ? 'Choose tonight’s sacrifice' : ui.kind === 'medium' ? 'Divine one soul' : 'Ward one door';
+      const prompt = ui.kind === 'cultist' ? 'Choose tonight’s sacrifice' : ui.kind === 'medium' ? 'Divine one soul' : ui.kind === 'archivist' ? 'Consult the records on one soul' : 'Ward one door';
       return `
         <h2>NIGHT ${v.day}</h2>${roleCard(y)}
         <h3>${prompt}</h3>
@@ -422,9 +424,7 @@
   }
 
   function phoneReveal(v, y) {
-    let out = `<h2>THE TOWN HAS SPOKEN</h2><p class="hint">Eyes on the TV.</p>`;
-    if (y.archivist) out += `<div class="presscard">📜 <b>ARCHIVIST’S RECORD</b> (you know first):<br>${esc(y.archivist.name)} — <b>${esc(y.archivist.role)}</b></div>`;
-    return out;
+    return `<h2>THE TOWN HAS SPOKEN</h2><p class="hint">Eyes on the TV.</p>`;
   }
 
   function phoneRising(v, y) {

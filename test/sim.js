@@ -21,7 +21,7 @@ function advanceTimer(engine) {
   engine.tick();
 }
 
-function doNight(engine, conns, { cultTarget, mediumTarget, wardTarget } = {}) {
+function doNight(engine, conns, { cultTarget, mediumTarget, wardTarget, archTarget } = {}) {
   const g = engine.s.game;
   const role = (id) => g.roles[id];
   const aliveNonCult = g.alive.filter((id) => role(id) !== 'cultist');
@@ -32,6 +32,7 @@ function doNight(engine, conns, { cultTarget, mediumTarget, wardTarget } = {}) {
     if (r === 'cultist') engine.handle(c, { type: 'night', target: cultTarget || aliveNonCult[0] });
     else if (r === 'medium') engine.handle(c, { type: 'night', target: mediumTarget || g.alive.find((x) => x !== id) });
     else if (r === 'occultist') engine.handle(c, { type: 'night', target: wardTarget || id });
+    else if (r === 'archivist') engine.handle(c, { type: 'night', target: archTarget || g.alive.find((x) => x !== id) });
     else {
       engine.handle(c, { type: 'explore', location: 'docks' });
       engine.handle(c, { type: 'exploreChoice', index: 1 });
@@ -179,6 +180,39 @@ doVote(engine, conns, lunatic);
 advanceTimer(engine); // reveal ->
 g = engine.s.game;
 ok(g.phase === 'gameover' && g.winner === 'lunatic', 'lunatic wins alone when banished');
+views(engine, conns);
+
+// ---------------- game 2b: the Archivist's records ----------------
+section('game 2b: archivist records catch the roleless and clear the explorers');
+engine.handle(host, { type: 'start', final: false, stretch: true });
+g = engine.s.game;
+const archivist = Object.keys(g.roles).find((id) => g.roles[id] === 'archivist');
+ok(!!archivist, 'stretch deal includes an archivist');
+const archConn = conns.find((c) => c.playerId === archivist);
+const cultB = Object.keys(g.roles).filter((id) => g.roles[id] === 'cultist');
+const lunaticB = Object.keys(g.roles).find((id) => g.roles[id] === 'lunatic');
+// Archivist checks a cultist: cultists leave no record.
+doNight(engine, conns, { archTarget: cultB[0], cultTarget: g.alive.find((id) => !cultB.includes(id) && id !== archivist && id !== lunaticB) });
+g = engine.s.game;
+ok(g.lastArchive?.by === archivist && g.lastArchive.target === cultB[0], 'record targets the checked player');
+ok(g.lastArchive.loc === null, 'a cultist leaves NO ENTRY in the records');
+let av = engine.viewFor(archConn);
+ok(av.you.archive && av.you.archive.loc === null, 'archivist phone shows the NO ENTRY record at dawn');
+advanceTimer(engine); // dawn -> day
+engine.handle(host, { type: 'skipToVote' });
+doVote(engine, conns, lunaticB); // end this game quickly via lunatic win
+advanceTimer(engine);
+g = engine.s.game;
+if (g.phase !== 'gameover') { // lunatic may have died at night; force-end via cult parity is overkill — just note it
+  console.log('  (note: quick-end via lunatic unavailable this run; finishing game normally)');
+  let s2 = 12;
+  while (engine.s.game.phase !== 'gameover' && s2-- > 0) {
+    if (engine.s.game.phase === 'night') doNight(engine, conns, {});
+    else advanceTimer(engine);
+    if (engine.s.game.phase === 'vote') { doVote(engine, conns, engine.s.game.alive.find((id) => cultB.includes(id)) || engine.s.game.alive[0]); }
+  }
+}
+ok(engine.s.game.phase === 'gameover', 'archivist test game concluded');
 views(engine, conns);
 
 // ---------------- game 3: finale -> The Rising ----------------
