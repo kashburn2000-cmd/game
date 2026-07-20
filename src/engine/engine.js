@@ -1,4 +1,4 @@
-// The complete game state machine for A Shadow Over Arkham.
+// The complete game state machine for STRANGE IS THE NIGHT.
 // Pure module: no I/O. Hosts (Cloudflare Durable Object / local Node server)
 // call handle()/tick(), then broadcast viewFor() to each connection and
 // persist serialize() output. All state is JSON-serializable.
@@ -813,7 +813,7 @@ export class Engine {
     const cultists = this.s.players.filter((p) => this.role(p.id) === 'cultist');
     if (cultists.length) {
       const st = cultists.sort((a, b) => (g.stats[b.id]?.daysSurvivedCultist || 0) - (g.stats[a.id]?.daysSurvivedCultist || 0))[0];
-      titles.push({ title: 'Silver Tongue', who: st.id, note: 'survived longest as a cultist' });
+      titles.push({ title: 'Silver Tongue', who: st.id, note: 'survived longest among the Masked' });
     }
     const cassandra = this.s.players.find((p) => {
       const st = g.stats[p.id];

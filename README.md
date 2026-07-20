@@ -1,16 +1,16 @@
-# 🐙 A Shadow Over Arkham
+# 🎭 Strange Is the Night
 
-A Lovecraftian social-deduction party game for **4–12 players** (best with 6–8).
+A King in Yellow social-deduction party game (built on Robert W. Chambers' public-domain 1895 mythos) for **4–12 players** (best with 6–8).
 The **TV shows the game** in a browser; everyone **plays from their phone** —
 no apps to install, nothing to print, no moderator needed.
 
-Werewolf at heart, with an RPG twist: secret cultists, night-time exploration
+Werewolf at heart, with an RPG twist: the secret Masked, night-time exploration
 with dice checks, one-use items, sanity and madness, haunting ghosts, secret
 side-quests, and an evening-long Doom Track that can end in a cooperative
-boss fight against the thing you all summoned.
+boss fight against the King himself.
 
 Full rules and design: see [DESIGN.md](DESIGN.md). How to play, in one breath:
-cultists secretly kill at night, the town argues by day and votes someone out,
+the Masked secretly kill at night, the town argues by day and votes someone out,
 the dead become ghosts who curse the living, and everything else is flavor,
 items, and paranoia.
 
@@ -54,7 +54,7 @@ you're in business.
 ### Optional: put it on your own domain
 
 1. Go to [dash.cloudflare.com](https://dash.cloudflare.com) → **Workers & Pages**.
-2. Click **shadow-over-arkham** → **Settings** → **Domains & Routes**.
+2. Click **strange-is-the-night** → **Settings** → **Domains & Routes**.
 3. Click **Add** → **Custom domain**, type something like `game.yourdomain.com`, confirm.
 
 A minute later the game answers at `game.yourdomain.com`. (This only works
@@ -77,7 +77,7 @@ again from the new folder. Same URL, new game.
 3. The first person to join is the **host** (⭐ on their phone) and gets the
    "Deal the roles" button plus in-game controls (extend timer, skip to vote,
    force a stuck phase, and marking curse-breakers).
-4. Play games all evening — wins bank Elder Signs on the scoreboard and move
+4. Play games all evening — wins bank Black Stars on the scoreboard and move
    the Doom Track. For the last game of the night, the host checks
    **🌌 The Stars Are Right** to unlock the extra roles and the boss finale.
 

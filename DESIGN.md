@@ -1,7 +1,14 @@
-# A Shadow Over Arkham
+# Strange Is the Night
 
-A Lovecraftian social deduction party game for 6–8 players, with a light
-RPG layer — a hybrid of Werewolf and a TTRPG one-shot. Runs in a browser
+*(formerly "A Shadow Over Arkham" — reskinned to the King in Yellow. All
+mythos content builds on Robert W. Chambers' public-domain 1895 collection;
+no text, plot, or names from copyrighted works like Delta Green's
+"Impossible Landscapes" are used, only the shared Chambers themes.)*
+
+A King in Yellow social deduction party game for 6–8 players, with a light
+RPG layer, set in the fog-locked 1920s lake town of Castaigne, where a
+traveling company has reopened the Palace Theater to stage a play nobody
+will name — a hybrid of Werewolf and a TTRPG one-shot. Runs in a browser
 on the living-room TV; players join from their phones via a room code. The
 arguing happens out loud in the room — the app handles everything that
 normally needs a moderator or trust: secret roles, night actions, anonymous
@@ -9,8 +16,8 @@ voting, timers, dice, and dramatic reveals.
 
 ## The pitch
 
-Automated Werewolf, reskinned as a 1920s New England town infiltrated by a
-cult. No moderator needed, no closed eyes, no cheating: night actions happen
+Automated Werewolf: the town against the Masked — neighbors who have read
+the play's second act. No moderator needed, no closed eyes, no cheating: night actions happen
 silently on phones while the TV shows fog and dread. Eliminated players don't
 leave the game — they *succumb to madness* and keep playing as Restless
 Spirits with real (but non-secret-leaking) powers.
@@ -21,8 +28,8 @@ Dealt secretly to phones at game start.
 
 | Role | Count | Power |
 |---|---|---|
-| **Cultist** | 2 | Know each other. Each night, jointly choose a victim to sacrifice. |
-| **Medium** | 1 | Each night, divines one player: learns cultist / not cultist. |
+| **The Masked** (cultist) | 2 | Know each other. Each night, jointly choose who the Play takes. |
+| **Medium** | 1 | Each night, divines one player: learns marked by the Sign / not marked. |
 | **Occultist** | 1 | Each night, wards one player; blocks the sacrifice if they were targeted. |
 | **Townsfolk** | rest | No powers. Wits and paranoia. |
 | **Lunatic** | 1 (only at 8 players) | Wins alone if the town votes them out. |
@@ -31,19 +38,19 @@ Dealt secretly to phones at game start.
 
 | Role | Power |
 |---|---|
-| **Deep One Hybrid** | Innocent townsfolk, but the Medium sees them as a cultist. |
-| **Archivist** | Each night, consults the town records on one player: at dawn, learns where they explored — or that NO ENTRY exists. Explorers leave records; cultists, the Medium, and the Occultist don't. A lie-detector for "where were you last night?" |
+| **Understudy** (hybrid) | Innocent townsfolk, but they once read a page they shouldn't have — the Medium sees the Sign on them. |
+| **Archivist** | Each night, consults the town records on one player: at dawn, learns where they explored — or that NO ENTRY exists. Explorers leave records; the Masked, the Medium, and the Occultist don't. A lie-detector for "where were you last night?" |
 
 ## Game flow
 
 1. **Lobby.** TV shows room code. Players join on phones and claim a 1920s
-   Arkham persona (name + portrait, e.g. *Dr. Constance Whateley, Coroner*).
+   Castaigne persona (name + portrait, e.g. *Dr. Constance Vale, County Coroner*).
    Narration uses persona names throughout.
 2. **Night.** TV dims to fog/ambient dread — identical visuals regardless of
    what's happening, so it can't leak information. Phones prompt night
-   actions (cultists pick a victim, Medium divines, Occultist wards). Phone
+   actions (the Masked pick a victim, Medium divines, Occultist wards). Phone
    vibration cues your turn. **Everyone else explores** (see RPG layer), so
-   every phone is busy every night — cultists can't be spotted by activity.
+   every phone is busy every night — the Masked can't be spotted by activity.
 3. **Morning.** TV narrates the night's events in pulpy prose. Night one has
    a kill (early death is softened by ghost powers — first ghost gets first
    haunting).
@@ -53,8 +60,8 @@ Dealt secretly to phones at game start.
    banished player's true role on the TV. **Tie = nobody banished.**
 6. Repeat until a side wins.
 
-**Win conditions:** Cultists win when they equal the remaining townsfolk (the
-ritual completes; TV goes apocalyptic). Town wins by banishing both cultists.
+**Win conditions:** The Masked win when they equal the remaining townsfolk (the
+ritual completes; TV goes apocalyptic). Town wins by banishing all of the Masked.
 Lunatic wins alone by getting voted out.
 
 A full game runs 20–30 minutes.
@@ -66,11 +73,11 @@ designed to be fun without leaking secrets:
 
 1. **Haunting.** Each morning, spirits vote to curse one living player with a
    rule for the day (e.g. "may only speak in questions", "must begin every
-   sentence with 'Mark my words'", "cannot say the word 'cultist'").
+   sentence with 'Mark my words'", "cannot say the word 'mask'").
    Breaking the rule costs that player their vote for the day.
 2. **Whispers.** Spirits can fire pre-written cryptic phrases onto the TV
-   during discussion ("*One among you reeks of brine.*", "*The stars are
-   almost right...*"). Curated list only — no free text, so nothing can be
+   during discussion ("*Have you seen the Yellow Sign?*", "*Strange is
+   the night where black stars rise.*"). Curated list only — no free text, so nothing can be
    spelled out.
 
 Late arrivals join as spirits until the next game deals them in.
@@ -88,16 +95,16 @@ result). Picking a persona is picking a playstyle.
 Each game banks experience: +1 for surviving, +1 for completing your
 secret quest, +1 for being on the winning side, +1 for discovering a rare
 scene. Between games, spend XP on +1 stat bumps (max +2 per stat), which
-persist all evening and feed every check — including the Rising's dice.
+persist all evening and feed every check — including the Last Act's dice.
 
 ### Night exploration & items
 
-Players without a power action choose a location each night — the docks,
-the library, the graveyard, Hibb's Roadhouse, the Old Chapel, or the
+Players without a power action choose a location each night — the Lakefront,
+the Library, the Graveyard, Hibb's Roadhouse, the Palace Theater, or the
 Asylum Annex — and get a narrated scene with a choice,
-Call-of-Cthulhu style. Outcomes (sometimes gated by a
+in the style of a horror one-shot. Outcomes (sometimes gated by a
 stat check): find an item, gain/lose sanity, or generate flavor that feeds
-the morning narration ("three townsfolk were seen near the docks").
+the morning narration ("lantern light was seen along the lakefront").
 
 **Deep scenes:** some successful choices open a second stage — the scene
 continues into a follow-up beat with its own choice and check, where the
@@ -111,7 +118,7 @@ bonus XP for the discovery.
 
 **Fellow travelers:** explorers who chose the same location glimpse each
 other — private, true information delivered at dawn ("You were not alone:
-the coroner was also at the docks"). At sanity ≤ 2, there's a 25% chance
+the coroner was also at the lakefront"). At sanity ≤ 2, there's a 25% chance
 one glimpsed face is *wrong* — below 3 sanity, don't trust your eyes.
 
 **Location unrest (persistent across the whole evening):** every failed
@@ -126,11 +133,11 @@ One-use items, curated so nothing directly reveals hidden roles:
 
 | Item | Effect |
 |---|---|
-| **Elder Sign amulet** | Survive one sacrifice ("the sigil on their door burned bright"). |
+| **Warding Charm** | Survive one sacrifice ("the charm burned bright"). |
 | **Whiskey flask** | Shrug off a haunting curse. |
 | **Press credentials** | Privately see one vote's tally breakdown after the fact. |
 | **Grave dirt** | Force the next haunting to target a player of your choice. |
-| **Sea-Glass Charm** | +2 on your next d20 check. Automatic. |
+| **Lake-Glass Charm** | +2 on your next d20 check. Automatic. |
 | **The Hanged Man** | When a check fails, redraw the die and take the new result. |
 | **Ring of Salt** | Blocks the next haunting aimed at you. Automatic. |
 | **Skeleton Key** | Opens key-gated rare scenes (consumed in the lock). |
@@ -153,21 +160,21 @@ reasons to act suspicious.
 
 ## The evening as a campaign (one-shot arc)
 
-- Persistent scoreboard across games: each win earns the side **Elder Signs**
+- Persistent scoreboard across games: each win earns the side **Black Stars**
   (plus personal bonuses from objectives).
 - **Doom Track:** the Ritual's progress across the whole evening. Cult wins
   advance it; town wins add wards. Short narrative interludes between games
   react to what actually happened.
 - Post-game **stats ceremony** on the TV: who voted for whom all night, plus
   earned titles — "Most Paranoid" (voted against most innocents), "Silver
-  Tongue" (longest-surviving cultist), "Cassandra" (was right, banished
+  Tongue" (longest-surviving Masked), "Cassandra" (was right, banished
   anyway).
 - Final game of the night: **"The Stars Are Right"** — stretch roles enabled,
   TV visuals progressively more apocalyptic. The Doom Track sets its stakes:
-  cult ahead → the finale starts with the stars nearly right and a bonus
-  cultist; town ahead → the cult gets desperate and loud.
-- **The Rising (boss finale, build-last):** if the cult completes the ritual
-  in the final game, everyone — living, dead, and cultists alike — plays a
+  the Masked ahead → the finale starts with the stars nearly right and a
+  bonus Masked; town ahead → the company gets desperate and loud.
+- **The Last Act (boss finale, build-last):** if the cult completes the ritual
+  in the final game, everyone — living, dead, and the Masked alike — plays a
   ~10-minute cooperative epilogue: persona stat rolls on phones, dice on the
   TV, hoarded items spent, to banish what was summoned. The table wins or
   loses together. If build time runs out, the ritual ending falls back to a
@@ -176,7 +183,7 @@ reasons to act suspicious.
 ## Narration tone
 
 **Dread with dry wit** — Night-Vale-adjacent. Real atmosphere, but the
-*Arkham Advertiser* cheerfully misreports each horror ("The screaming, the
+*Castaigne Courier* cheerfully misreports each horror ("The screaming, the
 paper assures readers, was recreational"). Write 4–5 variants of every
 narration beat so back-to-back games don't repeat lines.
 
@@ -192,7 +199,7 @@ Additional narrative systems layered on top:
 - **Between-game interludes** — after each game, a short "what the town did
   next" passage keyed to the winner (town / cult / lunatic / dawn / old one)
   bridges into the next game.
-- **Rising narration** — each boss-fight round has its own escalating line.
+- **Last Act narration** — each boss-fight round has its own escalating line.
 
 ## Sound
 

@@ -1,4 +1,4 @@
-// TV + phone client for A Shadow Over Arkham.
+// TV + phone client for STRANGE IS THE NIGHT.
 // One file, two modes: the TV renders the public stage; phones render each
 // player's private controller. Both just re-render from server state.
 (() => {
@@ -101,8 +101,8 @@
   function renderLanding() {
     app.innerHTML = `
       <div class="landing">
-        <h1 class="gametitle">A SHADOW<br>OVER ARKHAM</h1>
-        <p class="tagline">a parlor game of paranoia, whiskey, and things beneath the bay</p>
+        <h1 class="gametitle">STRANGE IS<br>THE NIGHT</h1>
+        <p class="tagline">a parlor tragedy of the Yellow Sign — paranoia, whiskey, and a play best left unread</p>
         <div class="landing-buttons">
           <button class="bigbtn" data-action="be-tv">🖥&nbsp; Host on this screen</button>
           <button class="bigbtn" data-action="show-join">📱&nbsp; Join a game</button>
@@ -110,7 +110,7 @@
         <div id="joinform" class="joinform hidden">
           <input id="jcode" placeholder="ROOM CODE" maxlength="4" autocapitalize="characters" autocomplete="off" value="${esc(sessionStorage.getItem('lastcode') || '')}">
           <input id="jname" placeholder="Your first name" maxlength="18" value="${esc(saved.name || '')}">
-          <button class="bigbtn" data-action="do-join">Enter Arkham</button>
+          <button class="bigbtn" data-action="do-join">Enter Castaigne</button>
           <p id="joinerr" class="err"></p>
         </div>
       </div>`;
@@ -144,8 +144,8 @@
     switch (v.phase) {
       case 'lobby':
         body = `
-          <h1 class="gametitle">A SHADOW OVER ARKHAM</h1>
-          <p class="tagline">a parlor game of paranoia for 4–12 souls · best with 6–8</p>
+          <h1 class="gametitle">STRANGE IS THE NIGHT</h1>
+          <p class="tagline">a parlor tragedy of the Yellow Sign for 4–12 souls · best with 6–8</p>
           <div class="joinbox">On your phone, visit <b>${esc(location.host)}</b> → <i>Join a game</i> → code
             <div class="roomcode">${esc(v.code)}</div>
           </div>
@@ -159,7 +159,7 @@
           <div class="scene night">
             <div class="moon">🌙</div>
             <h2 class="phasetitle">NIGHT ${v.day}</h2>
-            <p class="narr">${esc(v.night?.line || 'The town sleeps. Some of it works.')}</p>
+            <p class="narr">${esc(v.night?.line || 'The town sleeps. Some of it rehearses.')}</p>
             <p class="waiting">${v.night ? `${v.night.waiting} soul${v.night.waiting === 1 ? '' : 's'} still stirring…` : ''}</p>
             ${v.night?.spirits ? `<p class="hint">👻 the ${v.night.spirits} restless dead confer on a haunting…</p>` : ''}
             <div class="timer tiny" data-deadline="${v.deadline}"></div>
@@ -214,11 +214,11 @@
         const r = v.rising || {};
         body = `
           <div class="scene rising">
-            <div class="oldone">🐙</div>
-            <h2 class="phasetitle doomtext">THE RISING — ROUND ${r.round} of ${r.rounds}</h2>
-            <p class="narr">${esc(r.line || 'All of Arkham — the living, the dead, and the deeply embarrassed cultists — stands together.')}</p>
+            <div class="oldone">👑</div>
+            <h2 class="phasetitle doomtext">THE LAST ACT — ROUND ${r.round} of ${r.rounds}</h2>
+            <p class="narr">${esc(r.line || 'All of Castaigne — the living, the dead, and the deeply embarrassed Masked — stands together against the King.')}</p>
             <div class="risingbar"><div class="risingfill" style="width:${Math.min(100, (r.successes / r.needed) * 100)}%"></div>
-              <span class="risinglabel">${r.successes} / ${r.needed} rites completed · need ${r.dc}+ on the die</span></div>
+              <span class="risinglabel">${r.successes} / ${r.needed} verses unwoven · need ${r.dc}+ on the die</span></div>
             <p class="waiting">${r.picked} / ${r.total} have chosen their stand</p>
             <div class="rolls">${(r.lastRolls || []).map((x) => `<span class="roll ${x.ok ? 'ok' : 'bad'}">${esc(x.name.split(' ').slice(-1)[0])} 🎲${x.die}+${x.bonus}=${x.total}</span>`).join('')}</div>
             <div class="timer tiny" data-deadline="${v.deadline}"></div>
@@ -248,7 +248,7 @@
             ${c.doomLine ? `<p class="narr">${esc(c.doomLine)}</p>` : ''}
             ${signsBoard(v)}
             ${c.interlude ? `<div class="parchment interlude"><p>${esc(c.interlude)}</p></div>` : ''}
-            <p class="hint">The host may deal the next game from their phone. The bay is patient.</p>
+            <p class="hint">The host may deal the next game from their phone. The lake is patient.</p>
           </div>`;
         break;
       }
@@ -259,7 +259,7 @@
   function signsBoard(v) {
     const ranked = [...v.players].filter((p) => p.signs > 0).sort((a, b) => b.signs - a.signs);
     if (!ranked.length) return '';
-    return `<div class="signsboard">${ranked.map((p) => `<span class="signentry">${p.persona?.icon || '❔'} ${esc(p.persona ? p.persona.name.split(' ').slice(-1)[0] : p.name)} <b>${p.signs}✴</b></span>`).join('')}</div>`;
+    return `<div class="signsboard">${ranked.map((p) => `<span class="signentry">${p.persona?.icon || '❔'} ${esc(p.persona ? p.persona.name.split(' ').slice(-1)[0] : p.name)} <b>${p.signs}★</b></span>`).join('')}</div>`;
   }
 
   // ---------- phone ----------
@@ -292,14 +292,14 @@
     <div class="rolecard team-${y.roleInfo.team}">
       <div class="rolename">${y.roleInfo.icon} ${esc(y.roleInfo.name).toUpperCase()}</div>
       <p class="roledesc">${esc(y.roleInfo.desc)}</p>
-      ${y.mates?.length ? `<p class="mates">Your fellow cultist${y.mates.length > 1 ? 's' : ''}: <b>${y.mates.map(esc).join(', ')}</b></p>` : ''}
+      ${y.mates?.length ? `<p class="mates">Your fellow Masked: <b>${y.mates.map(esc).join(', ')}</b></p>` : ''}
     </div>` : '';
 
   const statusCards = (y) => `
     ${y.curse && !y.curse.broken ? `<div class="cursecard">👻 <b>HAUNTED:</b> ${esc(y.curse.text)}<br><i>Break it and you forfeit today’s vote.</i></div>` : ''}
     ${y.curse?.broken ? `<div class="cursecard broken">👻 Curse broken — your vote today is forfeit.</div>` : ''}
     ${(y.quirks || []).length ? `<div class="quirkcard">🧠 <b>Madness:</b> ${y.quirks.map(esc).join(' · ')}</div>` : ''}
-    ${y.objective ? `<div class="objcard ${y.objective.done ? 'done' : ''}">🗝 <b>Secret quest:</b> ${esc(y.objective.text)} ${y.objective.done ? '✅ done (+2✴)' : ''}</div>` : ''}
+    ${y.objective ? `<div class="objcard ${y.objective.done ? 'done' : ''}">🗝 <b>Secret quest:</b> ${esc(y.objective.text)} ${y.objective.done ? '✅ done (+2★)' : ''}</div>` : ''}
     ${y.archive ? `<div class="presscard">📜 <b>THE RECORDS — NIGHT ${y.archive.day}</b><br>${esc(y.archive.name)}: ${y.archive.loc ? 'an entry at <b>' + esc(y.archive.loc) + '</b>.' : '<b>NO ENTRY.</b> They were busy elsewhere…'}</div>` : ''}
     ${y.watch ? `<div class="presscard">⌚ <b>THE WATCH REMEMBERS — NIGHT ${y.watch.day}</b><br>${esc(y.watch.name)}: ${y.watch.loc ? 'went to <b>' + esc(y.watch.loc) + '</b>.' : '<b>NO RECORD.</b> Their evening left no trace…'}</div>` : ''}
     ${y.sighting ? `<div class="sightcard">👁 <b>YOU WERE NOT ALONE.</b> At ${esc(y.sighting.loc)} last night, you glimpsed: <b>${y.sighting.others.map(esc).join(', ')}</b>.${y.sanity != null && y.sanity <= 2 ? ' <i>(Your eyes have been… unreliable lately.)</i>' : ''}</div>` : ''}
@@ -342,11 +342,11 @@
     if (['cultist', 'medium', 'occultist', 'archivist'].includes(ui.kind)) {
       if (ui.submitted) {
         let extra = '';
-        if (ui.kind === 'medium') extra = `<div class="divined ${ui.mediumResult ? 'bad' : 'good'}">${ui.mediumResult ? '🐙 The cards scream. <b>' + esc(ui.targetName) + '</b> walks with the cult.' : '🃏 The cards are calm. <b>' + esc(ui.targetName) + '</b> is not of the cult.'}<br><small>(A Deep One Hybrid also reads as cult…)</small></div>`;
+        if (ui.kind === 'medium') extra = `<div class="divined ${ui.mediumResult ? 'bad' : 'good'}">${ui.mediumResult ? '🎭 The cards scream. <b>' + esc(ui.targetName) + '</b> bears the Yellow Sign.' : '🃏 The cards are calm. <b>' + esc(ui.targetName) + '</b> does not bear the Sign.'}<br><small>(An Understudy also reads as marked…)</small></div>`;
         if (ui.kind === 'archivist') extra = `<p class="hint">📜 The records on <b>${esc(ui.targetName)}</b> will surface at dawn.</p>`;
         return `<h2>NIGHT ${v.day}</h2>${roleCard(y)}<p class="hint">Your work is done: <b>${esc(ui.targetName)}</b>.</p>${extra}<p class="hint">Wait for dawn. Try to look innocent.</p>`;
       }
-      const prompt = ui.kind === 'cultist' ? 'Choose tonight’s sacrifice' : ui.kind === 'medium' ? 'Divine one soul' : ui.kind === 'archivist' ? 'Consult the records on one soul' : 'Ward one door';
+      const prompt = ui.kind === 'cultist' ? 'Choose who the Play takes' : ui.kind === 'medium' ? 'Divine one soul' : ui.kind === 'archivist' ? 'Consult the records on one soul' : 'Ward one door';
       return `
         <h2>NIGHT ${v.day}</h2>${roleCard(y)}
         <h3>${prompt}</h3>
@@ -452,7 +452,7 @@
     return `
       <h2>JUDGMENT</h2>
       ${y.curse?.broken ? `<div class="cursecard broken">Your broken curse silences your vote — cast it anyway, for the record.</div>` : ''}
-      <p class="hint">Who does Arkham cast out?</p>
+      <p class="hint">Who does Castaigne cast out?</p>
       <div class="targets">${(ui?.targets || []).map((t) => `<button class="targetbtn" data-action="vote" data-id="${t.id}">${esc(t.name)}</button>`).join('')}
       <button class="targetbtn abstain" data-action="vote" data-id="abstain">Abstain</button></div>`;
   }
@@ -463,11 +463,11 @@
 
   function phoneRising(v, y) {
     const ui = y.risingUI;
-    if (!ui) return `<h2>THE RISING</h2><p class="hint">Watch the TV. Pray to something local.</p>`;
-    if (ui.picked) return `<h2>THE RISING — ROUND ${ui.round}</h2><p class="hint">You have chosen your stand. The dice decide.</p>`;
+    if (!ui) return `<h2>THE LAST ACT</h2><p class="hint">Watch the TV. Pray to something local.</p>`;
+    if (ui.picked) return `<h2>THE LAST ACT — ROUND ${ui.round}</h2><p class="hint">You have chosen your stand. The dice decide.</p>`;
     return `
-      <h2>THE RISING — ROUND ${ui.round} of ${ui.rounds}</h2>
-      <p class="hint">The Old One rises. How do you resist?</p>
+      <h2>THE LAST ACT — ROUND ${ui.round} of ${ui.rounds}</h2>
+      <p class="hint">The King in Yellow takes the stage. How do you resist?</p>
       <div class="targets">
         <button class="targetbtn" data-action="rising" data-stat="brawn">💪 BRAWN +${(ui.stats.brawn || 0) * 2} — hold the barricades</button>
         <button class="targetbtn" data-action="rising" data-stat="wits">🧠 WITS +${(ui.stats.wits || 0) * 2} — read the counter-rite</button>
@@ -486,8 +486,8 @@
     return `
       <h2>${c ? (['cult', 'oldone'].includes(c.winner) ? 'DOOM' : 'RESPITE') : 'THE END'}</h2>
       <p class="hint">The full ceremony plays on the TV.</p>
-      ${y.objective ? `<div class="objcard ${y.objective.done ? 'done' : ''}">🗝 Your quest: ${esc(y.objective.text)} — ${y.objective.done ? 'DONE ✅ (+2✴)' : 'failed ❌'}</div>` : ''}
-      <p class="signentry">Your Elder Signs: <b>${(v.players.find((p) => p.id === y.id) || {}).signs || 0}✴</b></p>
+      ${y.objective ? `<div class="objcard ${y.objective.done ? 'done' : ''}">🗝 Your quest: ${esc(y.objective.text)} — ${y.objective.done ? 'DONE ✅ (+2★)' : 'failed ❌'}</div>` : ''}
+      <p class="signentry">Your Black Stars: <b>${(v.players.find((p) => p.id === y.id) || {}).signs || 0}✴</b></p>
       <div class="xppanel">
         <h3>🧬 Experience — ${y.xp || 0} unspent</h3>
         <p class="hint">What you survive makes you stranger. Spend between games; it lasts all evening.</p>
@@ -503,7 +503,7 @@
     let inner = '';
     if (v.phase === 'lobby' || v.phase === 'gameover') {
       inner += `
-        <label class="spendlabel"><input type="checkbox" id="optFinal"> 🌌 The Stars Are Right (finale — stretch roles + The Rising)</label>
+        <label class="spendlabel"><input type="checkbox" id="optFinal"> 🌌 The Stars Are Right (finale — stretch roles + The Last Act)</label>
         <label class="spendlabel"><input type="checkbox" id="optStretch"> 🐟 stretch roles (Hybrid + Archivist)</label>
         <button class="bigbtn ${enough ? '' : 'disabled'}" data-action="start">${v.phase === 'gameover' ? 'Deal the next game' : 'Deal the roles'} (${v.players.length} players)</button>`;
     } else {
@@ -522,7 +522,7 @@
   // ---------- render dispatch ----------
   function render() {
     if (screen === 'landing') return renderLanding();
-    if (!view) { app.innerHTML = `<div class="phone"><p class="hint">Reaching Arkham…</p></div>`; return; }
+    if (!view) { app.innerHTML = `<div class="phone"><p class="hint">Reaching Castaigne…</p></div>`; return; }
     if (role === 'tv') renderTV(view); else renderPhone(view);
   }
 
