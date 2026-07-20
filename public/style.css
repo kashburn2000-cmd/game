@@ -231,5 +231,9 @@ body {
 .hostpanel { margin-top: 1.4rem; border-top: 1px dashed #3a4a5a; padding-top: .6rem; }
 .hostpanel summary { cursor: pointer; color: var(--gold); letter-spacing: .08em; padding: .4rem 0; }
 .hostpanel .bigbtn { width: 100%; margin-top: .6rem; }
+.guestlist { margin-top: .8rem; border: 1px dashed #3a4a5a; border-radius: .6rem; padding: .4rem .7rem; }
+.guestlist summary { cursor: pointer; color: var(--parchment-dim); font-size: .9rem; }
+.guestlist .minibtn { display: block; width: 100%; text-align: left; }
+.guestlist .minibtn.tagged { border-color: var(--gold); color: var(--gold); }
 
 @media (max-width: 420px) { .personagrid { grid-template-columns: 1fr; } }

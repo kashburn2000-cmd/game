@@ -217,10 +217,13 @@ Additional narrative systems layered on top:
   newspaper — headline by winner, the ending as the lead story, the
   interlude, roles as "Arrests & Departures", titles as "Society Notes",
   quests as "Classifieds", XP as "Education Notes", doom as the weather.
-- **Name easter eggs** (see NAME_EGGS in content.js — edit freely): if a
-  player joins under a recognized real name, the game quietly knows —
-  one personal spirit whisper, one Courier notice, and one line when they
-  explore the Palace. Each fires at most once per evening.
+- **Name easter eggs** (see NAME_EGGS in content.js — edit freely): the
+  game can quietly know who a player really is — one personal spirit
+  whisper, one Courier notice, and one line when they explore the Palace,
+  each firing at most once per evening. Identities attach two ways: the
+  host privately tags players from the **guest list** in the host panel
+  (works regardless of what alias they joined under, and overrides), or a
+  player happens to join under a recognized real name (auto-match).
 
 ## Practical party requirements
 

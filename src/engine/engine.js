@@ -86,6 +86,7 @@ export class Engine {
       case 'extend': return isHost && this.extend();
       case 'skipToVote': return isHost && this.g?.phase === 'day' && this.startVote();
       case 'markBroken': return isHost && this.markBroken(msg.playerId, !!msg.broken);
+      case 'assignEgg': return isHost && this.assignEgg(msg.playerId, msg.egg);
       case 'kick': return isHost && this.kick(msg.playerId);
       case 'night': return this.nightAction(pid, msg.target);
       case 'explore': return this.explore(pid, msg.location);
@@ -158,6 +159,17 @@ export class Engine {
   kick(targetId) {
     if (this.g && this.g.phase !== 'gameover') return; // in-game kicks disallowed; use forceAdvance for stalls
     this.s.players = this.s.players.filter((p) => p.id !== targetId);
+  }
+
+  // Host privately tags who a player really is; the Play takes note.
+  // Overrides any auto-match from the typed join name.
+  assignEgg(targetId, egg) {
+    const p = this.player(targetId);
+    if (!p) return;
+    if (egg !== null && !NAME_EGGS[egg]) return;
+    // An identity belongs to one player at a time.
+    if (egg) for (const other of this.s.players) { if (other.egg === egg) other.egg = null; }
+    p.egg = egg || null;
   }
 
   initPlayerGameState(id) {
@@ -1059,6 +1071,15 @@ export class Engine {
         return { ...x, takenBy: owner && owner.id !== pid ? owner.name : null, mine: owner?.id === pid };
       });
     }
+    if (you.host) {
+      you.hostUI = {
+        canStart: !g || g.phase === 'gameover',
+        phase: g ? g.phase : 'lobby',
+        cursed: g ? Object.entries(g.curse).map(([id, c]) => ({ id, name: this.pname(id), broken: c.broken })) : [],
+        eggKeys: Object.keys(NAME_EGGS),
+        eggs: this.s.players.map((q) => ({ id: q.id, name: q.name, egg: q.egg || null })),
+      };
+    }
     if (!g) return v;
     const role = this.role(pid);
     you.role = role;
@@ -1152,13 +1173,6 @@ export class Engine {
       v.ceremony = this.ceremonyView();
       you.xp = p.xp || 0;
       you.bumps = p.statBumps || {};
-    }
-    if (you.host) {
-      you.hostUI = {
-        canStart: !g || g.phase === 'gameover',
-        phase: g.phase,
-        cursed: Object.entries(g.curse).map(([id, c]) => ({ id, name: this.pname(id), broken: c.broken })),
-      };
     }
     return v;
   }

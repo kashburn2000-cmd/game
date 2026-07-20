@@ -413,7 +413,7 @@ section('name easter eggs');
 import { NAME_EGGS, WHISPERS as WLIST } from '../src/engine/content.js';
 const e3 = new Engine(newRoom('EGGT'));
 const c3 = [];
-for (const nm of ['Kevin', 'Brenda', 'Alex', 'Jason', 'Annie', 'Matt']) {
+for (const nm of ['Kevin', 'Brendan', 'Alex', 'Jason', 'Annie', 'Matt']) {
   const c = { role: 'player', playerId: null };
   e3.handle(c, { type: 'join', name: nm });
   c3.push(c);
@@ -466,6 +466,40 @@ ok(g3.phase === 'dawn', 'egg-test night 2 resolves');
 const newKeys = Object.keys(e3.s.campaign.eggCourierUsed || {}).filter((k) => !usedBefore.includes(k));
 ok(newKeys.length === 1 && g3.dawnReport.includes(NAME_EGGS[newKeys[0]].courier), 'the Courier prints a personal notice');
 views(e3, c3);
+
+// Host-assigned identities: players never type real names.
+section('host-assigned identities');
+const e4 = new Engine(newRoom('ASGT'));
+const c4 = [];
+for (const nm of ['TheHost', 'CoolGuy99', 'xX_wizard_Xx', 'Turnip']) {
+  const c = { role: 'player', playerId: null };
+  e4.handle(c, { type: 'join', name: nm });
+  c4.push(c);
+}
+ok(!e4.s.players.some((p) => p.egg), 'aliases match nothing');
+e4.handle(c4[0], { type: 'assignEgg', playerId: c4[1].playerId, egg: 'brendan' });
+ok(e4.player(c4[1].playerId).egg === 'brendan', 'host tags a player as brendan');
+let hv = e4.viewFor(c4[0]).you.hostUI;
+ok(hv.eggs.find((e) => e.id === c4[1].playerId)?.egg === 'brendan', 'guest list shows the tag');
+ok(hv.eggKeys.includes('brendan') && hv.eggKeys.includes('kevin'), 'guest list offers all identities');
+e4.handle(c4[0], { type: 'assignEgg', playerId: c4[2].playerId, egg: 'brendan' });
+ok(e4.player(c4[2].playerId).egg === 'brendan' && !e4.player(c4[1].playerId).egg, 'reassigning moves the identity');
+e4.handle(c4[0], { type: 'assignEgg', playerId: c4[2].playerId, egg: null });
+ok(!e4.player(c4[2].playerId).egg, 'host can clear a tag');
+e4.handle(c4[1], { type: 'assignEgg', playerId: c4[3].playerId, egg: 'matt' });
+ok(!e4.player(c4[3].playerId).egg, 'non-host cannot tag');
+e4.handle(c4[0], { type: 'assignEgg', playerId: c4[3].playerId, egg: 'nonsense' });
+ok(!e4.player(c4[3].playerId).egg, 'unknown identities rejected');
+// Tagged alias still triggers the Palace scene egg.
+e4.handle(c4[0], { type: 'assignEgg', playerId: c4[3].playerId, egg: 'annie' });
+e4.handle(c4[0], { type: 'start' });
+const g4 = e4.s.game;
+if (!['cultist', 'medium', 'occultist'].includes(g4.roles[c4[3].playerId])) {
+  e4.handle(c4[3], { type: 'explore', location: 'church' });
+  ok(g4.night.explores[c4[3].playerId]?.egg === NAME_EGGS.annie.scene, 'tagged alias gets the Palace moment');
+} else {
+  console.log('  (tagged player drew a power role this run; Palace moment covered by egg suite above)');
+}
 
 console.log(failures ? `\n${failures} FAILURES` : '\nAll checks passed.');
 process.exit(failures ? 1 : 0);

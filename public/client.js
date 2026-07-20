@@ -529,8 +529,12 @@
     if (v.phase === 'lobby' || v.phase === 'gameover') {
       inner += `
         <label class="spendlabel"><input type="checkbox" id="optFinal"> 🌌 The Stars Are Right (finale — stretch roles + The Last Act)</label>
-        <label class="spendlabel"><input type="checkbox" id="optStretch"> 🐟 stretch roles (Hybrid + Archivist)</label>
-        <button class="bigbtn ${enough ? '' : 'disabled'}" data-action="start">${v.phase === 'gameover' ? 'Deal the next game' : 'Deal the roles'} (${v.players.length} players)</button>`;
+        <label class="spendlabel"><input type="checkbox" id="optStretch"> 🐟 stretch roles (Understudy + Archivist)</label>
+        <button class="bigbtn ${enough ? '' : 'disabled'}" data-action="start">${v.phase === 'gameover' ? 'Deal the next game' : 'Deal the roles'} (${v.players.length} players)</button>
+        <details class="guestlist"><summary>🕯 the guest list (keep this to yourself)</summary>
+          <p class="hint">Tap a name to tag who they really are. The Play takes note.</p>
+          ${(ui.eggs || []).map((e) => `<button class="minibtn ${e.egg ? 'tagged' : ''}" data-action="cycleEgg" data-id="${e.id}" data-egg="${esc(e.egg || '')}">${esc(e.name)} → ${e.egg ? esc(e.egg) : '(untagged)'}</button>`).join('')}
+        </details>`;
     } else {
       inner += `
         <button class="minibtn" data-action="extend">＋1 min</button>
@@ -600,6 +604,14 @@
       case 'skipToVote': send({ type: 'skipToVote' }); break;
       case 'forceAdvance': send({ type: 'forceAdvance' }); break;
       case 'markBroken': send({ type: 'markBroken', playerId: btn.dataset.id, broken: btn.dataset.broken === '1' }); break;
+      case 'cycleEgg': {
+        const keys = view?.you?.hostUI?.eggKeys || [];
+        const cycle = [null, ...keys];
+        const cur = btn.dataset.egg || null;
+        const next = cycle[(cycle.indexOf(cur) + 1) % cycle.length];
+        send({ type: 'assignEgg', playerId: btn.dataset.id, egg: next });
+        break;
+      }
       case 'night': send({ type: 'night', target: btn.dataset.id }); break;
       case 'explore': send({ type: 'explore', location: btn.dataset.id }); break;
       case 'explore-choice': send({ type: 'exploreChoice', index: +btn.dataset.i }); break;

@@ -631,10 +631,10 @@ export const RISING_ROUNDS = [
 // Courier notice at dawn, and a personal line when they explore the Palace.
 // Edit freely — this is the place to hide inside jokes.
 export const NAME_EGGS = {
-  brenda: {
-    whisper: 'The seat beside Brenda has been reserved for years.',
-    courier: 'PERSONAL — The Courier reminds BRENDA that her complimentary subscription continues whether or not she recalls subscribing.',
-    scene: 'On the seat beside you lies tonight’s program. Nobody printed a program. The cast list is one name long: BRENDA.',
+  brendan: {
+    whisper: 'The seat beside Brendan has been reserved for years.',
+    courier: 'PERSONAL — The Courier reminds BRENDAN that his complimentary subscription continues whether or not he recalls subscribing.',
+    scene: 'On the seat beside you lies tonight’s program. Nobody printed a program. The cast list is one name long: BRENDAN.',
   },
   alex: {
     whisper: 'Alex has read further than they say. Ask Alex.',
