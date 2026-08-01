@@ -14,6 +14,17 @@ the Masked secretly kill at night, the town argues by day and votes someone out,
 the dead become ghosts who curse the living, and everything else is flavor,
 items, and paranoia.
 
+Two things worth knowing before your first game:
+
+- **Casting someone out takes a real majority** — at least half the voting
+  townsfolk, rounded up, on one name. Abstaining doesn't lower that bar, so a
+  quiet room protects whoever is accused. The TV and every phone show the
+  number live.
+- **The last game of the night can end in a boss fight.** If the Masked
+  complete the ritual with 🌌 *The Stars Are Right* switched on, the whole
+  table — living, dead, and the Masked — plays five scenes against the King
+  himself.
+
 ---
 
 ## Get it running (one-time setup, ~15 minutes, no coding)
@@ -92,6 +103,11 @@ again from the new folder. Same URL, new game.
 4. Play games all evening — wins bank Black Stars on the scoreboard and move
    the Doom Track. For the last game of the night, the host checks
    **🌌 The Stars Are Right** to unlock the extra roles and the boss finale.
+5. If that finale goes badly and the ritual completes, everyone keeps
+   playing: **The Last Act** puts the whole table — including the ghosts, and
+   including the Masked, who each have to declare on the record whether
+   they're taking the mask off — through five scenes against the King. How
+   ugly the Doom Track got all evening decides how hard those scenes are.
 
 ### Friend photos (optional, highly recommended)
 

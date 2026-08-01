@@ -57,8 +57,28 @@ Dealt secretly to phones at game start.
 4. **Day.** 3-minute out-loud discussion timer. Host phone has +1 min and
    skip-to-vote controls.
 5. **Judgment.** Anonymous vote on phones. Slow dramatic reveal of the
-   banished player's true role on the TV. **Tie = nobody banished.**
+   banished player's true role on the TV.
 6. Repeat until a side wins.
+
+### The voting threshold
+
+Banishment takes a real mandate, not a plurality of one. A name is cast out
+only if it draws **at least half the voting townsfolk, rounded up** — and
+strictly more than any other name.
+
+- **Eligible voters** are the living, minus anyone who broke their haunting
+  curse (they forfeited their vote, so they don't count toward a bar they
+  can't help clear).
+- **Abstaining does not lower the bar.** Sitting out is a way of protecting
+  the accused, and it costs the accusers. Six players where five abstain and
+  one votes banishes nobody.
+- Three ways a judgment can come back empty, each with its own reveal on the
+  TV and its own narration: **DEADLOCK** (two names tied), **NO MAJORITY**
+  (a clear leader who fell short — the TV prints the count against the bar),
+  and **THE TOWN HOLDS ITS TONGUE** (nobody named anyone at all).
+
+The threshold is published live: the TV shows it under the vote timer and
+every phone shows it above the ballot, so nobody is surprised by it.
 
 **Win conditions:** The Masked win when they equal the remaining townsfolk (the
 ritual completes; TV goes apocalyptic). Town wins by banishing all of the Masked.
@@ -173,12 +193,67 @@ reasons to act suspicious.
   TV visuals progressively more apocalyptic. The Doom Track sets its stakes:
   the Masked ahead → the finale starts with the stars nearly right and a
   bonus Masked; town ahead → the company gets desperate and loud.
-- **The Last Act (boss finale, build-last):** if the cult completes the ritual
-  in the final game, everyone — living, dead, and the Masked alike — plays a
-  ~10-minute cooperative epilogue: persona stat rolls on phones, dice on the
-  TV, hoarded items spent, to banish what was summoned. The table wins or
-  loses together. If build time runs out, the ritual ending falls back to a
-  cinematic TV sequence instead of a playable fight.
+- **The Last Act (boss finale):** if the cult completes the ritual in the
+  final game, everyone — living, dead, and the Masked alike — plays a
+  ~10-minute cooperative epilogue against the King. See below.
+
+## The Last Act (the boss fight)
+
+Five scenes, each a distinct threat, played out with phone choices and TV
+dice. Two tracks run against each other:
+
+- **The King's verses** — the boss's health. Unwind them all and the curtain
+  falls (`dawn`).
+- **Castaigne's resolve** — the town's health. Spend it all and the town
+  joins the cast (`oldone`). Running out of scenes with verses left loses too.
+
+The verse count is not struck until the Masked have declared (below), because
+the Play's length depends on who is actually in it.
+
+### Scenes
+
+Each of the five scenes — *The House Lights Die, The Overture, The
+Procession, The Second Act, The Curtain Call* — names its own three stances
+in its own language, and has:
+
+- a **favored** stat: rolls at +2 there, and a hit unwinds an *extra* verse;
+- a **poor** stat: rolls at −2, the wrong tool for that scene;
+- a **difficulty bump**: later scenes are harder, and the evening's Doom Track
+  sets the baseline (doom ≥ 4 and ≥ 7 each add a point).
+
+Across the five scenes every stat is favored at least once and punished at
+least once, so no persona build coasts and no build is dead weight.
+
+### What each seat does
+
+- **The living** pick a stance and roll d20 + stat×2 + modifiers. They may
+  **burn an item** (+3) and/or **push** (+3 now; a failure costs the town an
+  extra resolve and the player a point of sanity). A natural 20 unwinds an
+  extra verse; a natural 1 costs an extra resolve.
+- **The dead** are in the fight too: each spirit either **lends strength**
+  (+2 to one living player's roll — capped at +4 per person, so the dead have
+  to spread out) or **wails at the King** directly (flat d20+4; a hit unwinds
+  a verse, a miss costs the town nothing).
+- **The surviving Masked** must declare, once and publicly, on the record:
+  **take the mask off** and fight beside the town like anyone else, or **keep
+  it on** and go on performing. A keeper still rolls every scene — but a
+  landed roll takes the town's *resolve* instead of the King's verses, the
+  dead will not lend them a thing, and every scene runs a point harder. If
+  the King takes the stage they win alone (4 Black Stars, like the Lunatic);
+  if the curtain falls they get nothing. The declaration is final, and a
+  phone that never answers is taken to have removed the mask.
+
+### Aftermath
+
+The morning edition reviews the performance: scenes played, verses unwound,
+resolve remaining, who was loudest in the din, who never took the mask off,
+and a scene-by-scene ledger. Finale-specific titles — *Curtain-Puller*,
+*Recklessly Magnificent*, *Never Took It Off* — join the usual honors, and
+unwinding 3+ verses banks an extra XP.
+
+Tuned so the Doom Track genuinely sets the stakes: a table that has kept doom
+low wins comfortably, a table on the brink is close to a coin flip, and the
+fight usually runs four or five of its five scenes.
 
 ## Narration tone
 
@@ -199,7 +274,9 @@ Additional narrative systems layered on top:
 - **Between-game interludes** — after each game, a short "what the town did
   next" passage keyed to the winner (town / cult / lunatic / dawn / old one)
   bridges into the next game.
-- **Last Act narration** — each boss-fight round has its own escalating line.
+- **Last Act narration** — each boss-fight scene has its own title, setup,
+  and a pair of outcome lines for whether the scene went well or badly, plus
+  a rotating status beat that shifts as the fight turns desperate or close.
 
 ## Sound
 

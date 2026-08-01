@@ -3,7 +3,7 @@
 // call handle()/tick(), then broadcast viewFor() to each connection and
 // persist serialize() output. All state is JSON-serializable.
 
-import { PERSONAS, ROLES, CURSES, WHISPERS, ITEMS, LOCATIONS, OBJECTIVES, NARRATION, TITLES, DOOM_LINES, INTERLUDES, RISING_ROUNDS, VISIONS, UNREST_LINES, NAME_EGGS } from './content.js';
+import { PERSONAS, ROLES, CURSES, WHISPERS, ITEMS, LOCATIONS, OBJECTIVES, NARRATION, TITLES, DOOM_LINES, INTERLUDES, RISING_SCENES, RISING_BEATS, VISIONS, UNREST_LINES, NAME_EGGS } from './content.js';
 
 const rand = (n) => Math.floor(Math.random() * n);
 const pick = (a) => a[rand(a.length)];
@@ -11,8 +11,13 @@ const shuffle = (a) => { const b = [...a]; for (let i = b.length - 1; i > 0; i--
 const uid = () => Math.random().toString(36).slice(2, 10) + Math.random().toString(36).slice(2, 6);
 const now = () => Date.now();
 
-export const TIMERS = { night: 180e3, dawn: 26e3, day: 180e3, vote: 90e3, reveal: 14e3, rising: 50e3 };
+export const TIMERS = { night: 180e3, dawn: 26e3, day: 180e3, vote: 90e3, reveal: 14e3, rising: 70e3 };
 const MAX_SANITY = 5, START_SANITY = 5, RESET_SANITY = 3, MAX_ITEMS = 3;
+// The Last Act's dials, gathered here because they are what you retune when
+// the boss fight plays too easy or too mean. LEND_CAP is per living player,
+// so the dead have to spread out; MASK_DC_CAP bounds how much harder a table
+// of unrepentant Masked can make every scene.
+const LEND_CAP = 4, PUSH_BONUS = 3, ITEM_BONUS = 3, FAVORED_BONUS = 2, POOR_PENALTY = 2, MASK_DC_CAP = 1;
 const WHISPERS_PER_DAY = 3, WHISPER_GAP = 6e3;
 
 export function newRoom(code) {
@@ -103,7 +108,9 @@ export class Engine {
       case 'useItem': return this.useItem(pid, msg.item, msg.target);
       case 'tarot': return this.tarotDraw(pid, !!msg.use);
       case 'spendXp': return this.spendXp(pid, msg.stat);
-      case 'risingPick': return this.risingPick(pid, msg.stat, !!msg.spend);
+      case 'risingPick': return this.risingPick(pid, msg.stat, !!msg.spend, !!msg.push);
+      case 'risingSpirit': return this.risingSpirit(pid, msg.mode, msg.target);
+      case 'risingMask': return this.risingMask(pid, !!msg.keep);
     }
   }
 
@@ -747,6 +754,18 @@ export class Engine {
     this.fx('vote');
   }
 
+  // How many votes it takes to cast a neighbor out: half the town that still
+  // HAS a vote, rounded up, and never fewer than two. Abstaining does not
+  // lower the bar — a silent town protects the accused, which is the point.
+  // (Players who broke their haunting curse forfeited their vote, so they
+  // don't count toward the bar they can no longer help clear.)
+  voteThreshold() {
+    const g = this.g;
+    if (!g) return 0;
+    const eligible = g.alive.filter((id) => !g.curse[id]?.broken).length;
+    return Math.max(2, Math.ceil(eligible / 2));
+  }
+
   vote(pid, target) {
     const g = this.g;
     if (!g || g.phase !== 'vote' || !this.alive(pid)) return;
@@ -768,9 +787,12 @@ export class Engine {
       if (g.curse[voter]?.broken) continue; // broke their curse: vote silenced
       counts[target] = (counts[target] || 0) + 1;
     }
+    const threshold = this.voteThreshold();
     const max = Math.max(0, ...Object.values(counts));
     const leaders = Object.keys(counts).filter((t) => counts[t] === max && max > 0);
-    let banished = leaders.length === 1 ? leaders[0] : null;
+    // Banishment needs a single clear leader who also clears the threshold.
+    let banished = leaders.length === 1 && max >= threshold ? leaders[0] : null;
+    const reason = banished ? null : leaders.length > 1 ? 'tie' : max === 0 ? 'silence' : 'short';
 
     // Stats + objectives per voter.
     for (const [voter, target] of Object.entries(votesBy)) {
@@ -785,7 +807,9 @@ export class Engine {
 
     let line;
     if (!banished) {
-      line = pick(NARRATION.tie)();
+      if (reason === 'tie') line = pick(NARRATION.tie)();
+      else if (reason === 'silence') line = pick(NARRATION.silence)();
+      else line = pick(NARRATION.shortfall)(this.pname(leaders[0]), max, threshold);
     } else {
       const role = this.role(banished);
       g.alive = g.alive.filter((id) => id !== banished);
@@ -800,8 +824,13 @@ export class Engine {
         g.alive.forEach((id) => { if (this.role(id) !== 'cultist') this.loseSanity(id, 1); });
       }
     }
-    g.lastTally = { day: g.day, votesBy, counts, banished };
-    g.reveal = { banished, role: banished ? this.role(banished) : null, tie: !banished, counts, line };
+    g.lastTally = { day: g.day, votesBy, counts, banished, threshold };
+    g.reveal = {
+      banished, role: banished ? this.role(banished) : null,
+      tie: !banished, reason, counts, threshold, top: max,
+      topName: leaders.length === 1 ? this.pname(leaders[0]) : null,
+      line,
+    };
     this.s.players.forEach((p) => this.checkObjective(p.id));
     this.setPhase('reveal');
     this.fx('reveal');
@@ -859,12 +888,17 @@ export class Engine {
       const role = this.role(p.id);
       if (!role) continue;
       const team = ROLES[role].team;
+      // A Masked who never took the mask off in the Last Act is vindicated if
+      // the King takes the stage — and wins alone, like the Lunatic. If the
+      // curtain falls instead, they get nothing: they bet against the town.
+      const kept = g.rising?.masks?.[p.id] === 'kept';
       const won =
         (winner === 'cult' && team === 'cult') ||
         (winner === 'town' && team === 'town') ||
         (winner === 'lunatic' && p.id === lunaticId) ||
-        (winner === 'dawn');
-      if (won) { winners.push(p.id); this.addSign(p.id, winner === 'lunatic' ? 4 : winner === 'dawn' ? 2 : 3); }
+        (winner === 'oldone' && kept) ||
+        (winner === 'dawn' && !kept);
+      if (won) { winners.push(p.id); this.addSign(p.id, winner === 'lunatic' || winner === 'oldone' ? 4 : winner === 'dawn' ? 2 : 3); }
       if (g.objectives[p.id]?.done) this.addSign(p.id, 2);
     }
 
@@ -904,6 +938,15 @@ export class Engine {
     if (t5) titles.push({ title: 'Packrat of the Apocalypse', who: t5, note: 'hoarded the most items' });
     const t6 = byStat((s) => s.sanityLost || 0, 3);
     if (t6) titles.push({ title: 'Most Fragile Mind', who: t6, note: 'lost the most sanity' });
+    if (g.rising) {
+      const tal = g.rising.tally || {};
+      const ranked = Object.keys(tal).sort((a, b) => tal[b].verses - tal[a].verses);
+      if (ranked[0] && tal[ranked[0]].verses >= 2) titles.push({ title: 'Curtain-Puller', who: ranked[0], note: `unwound ${tal[ranked[0]].verses} of the King's verses` });
+      const nerviest = Object.keys(tal).sort((a, b) => tal[b].pushes - tal[a].pushes)[0];
+      if (nerviest && tal[nerviest].pushes >= 2) titles.push({ title: 'Recklessly Magnificent', who: nerviest, note: 'threw themselves at the Play the hardest' });
+      const keeper = g.rising.living.find((id) => g.rising.masks[id] === 'kept');
+      if (keeper) titles.push({ title: 'Never Took It Off', who: keeper, note: `kept the mask on and took ${tal[keeper]?.kingHits || 0} out of the town` });
+    }
 
     // Experience for the campaign: survive, quest, win, rare discovery.
     const xpRows = [];
@@ -914,6 +957,7 @@ export class Engine {
       if (g.objectives[p.id]?.done) gain++;
       if (winners.includes(p.id)) gain++;
       if (g.stats[p.id]?.rareFound) gain++;
+      if ((g.rising?.tally?.[p.id]?.verses || 0) >= 3) gain++; // stood up in the Last Act
       if (gain) p.xp = (p.xp || 0) + gain;
       xpRows.push({ id: p.id, gained: gain, total: p.xp || 0 });
     }
@@ -936,6 +980,17 @@ export class Engine {
       xp: xpRows,
       doom: camp.doom,
       signs: { ...camp.signs },
+      lastAct: g.rising ? {
+        rounds: g.rising.log.length, of: g.rising.rounds,
+        verses: g.rising.verses, versesLeft: g.rising.versesLeft,
+        resolve: g.rising.resolve, resolveMax: g.rising.resolveMax,
+        keepers: g.rising.living.filter((id) => g.rising.masks[id] === 'kept'),
+        log: g.rising.log,
+        tally: Object.entries(g.rising.tally)
+          .filter(([, t]) => t.verses > 0 || t.kingHits > 0 || t.lends > 0 || t.burned > 0)
+          .sort((a, b) => b[1].verses - a[1].verses || b[1].kingHits - a[1].kingHits)
+          .map(([id, t]) => ({ id, ...t })),
+      } : null,
     };
     camp.games++;
     camp.log.push({ num: g.num, winner, doom: camp.doom });
@@ -944,53 +999,206 @@ export class Engine {
     this.fx(winner === 'cult' || winner === 'oldone' ? 'doom' : 'triumph');
   }
 
-  // ---------- The Rising (boss finale) ----------
+  // ---------- The Last Act (boss finale) ----------
+  // A five-scene cooperative fight. Each scene favors one stat and punishes
+  // another; the living roll, the dead either lend their strength or wail at
+  // the King themselves, and any surviving Masked must decide, on the record,
+  // whether to take the mask off. Two tracks run against each other: the
+  // King's VERSES (unwind them all and the curtain falls) and the town's
+  // RESOLVE (spend it all and the town joins the cast).
   startRising() {
     const g = this.g;
     g.pendingWin = null;
     const participants = this.s.players.filter((p) => this.role(p.id) || this.spirit(p.id)).map((p) => p.id);
-    g.rising = {
-      participants,
-      round: 1, rounds: 3,
-      successes: 0,
-      needed: Math.max(4, Math.round(participants.length * 1.55)),
-      dc: this.s.campaign.doom >= 6 ? 16 : 14,
-      picks: {}, lastRolls: [],
+    const living = participants.filter((id) => this.alive(id));
+    const spirits = participants.filter((id) => !this.alive(id));
+    const doom = this.s.campaign.doom;
+    const r = g.rising = {
+      participants, living, spirits,
+      round: 1, rounds: RISING_SCENES.length,
+      baseDc: 16 + (doom >= 4 ? 1 : 0) + (doom >= 7 ? 1 : 0),
+      picks: {}, spiritPicks: {}, masks: {},
+      lastRolls: [], lastSpirits: [], lastDc: null, log: [], tally: {},
     };
+    // How long the Play runs isn't known until the town knows who is in it —
+    // the verse count is struck once the Masked have declared (see
+    // resolveRisingRound). Until then both are null and the TV shows a shrug.
+    r.verses = null;
+    r.versesLeft = null;
+    r.resolveMax = Math.max(6, living.length * 2 + spirits.length);
+    r.resolve = r.resolveMax;
+    for (const id of participants) {
+      r.tally[id] = { verses: 0, kingHits: 0, successes: 0, fails: 0, burned: 0, pushes: 0, lends: 0, best: 0 };
+    }
     this.setPhase('rising');
     this.fx('rising');
   }
 
-  risingPick(pid, stat, spend) {
+  risingScene() { const r = this.g?.rising; return r ? RISING_SCENES[Math.min(r.round - 1, RISING_SCENES.length - 1)] : null; }
+  maskKept(id) { return this.g?.rising?.masks[id] === 'kept'; }
+  risingKeepers() { const r = this.g.rising; return r.living.filter((id) => r.masks[id] === 'kept').length; }
+  // The King's verses scale to whoever actually stands against him; the dead
+  // count for less, since they can only push from behind the curtain.
+  risingVerses() {
+    const r = this.g.rising;
+    const standing = r.living.filter((id) => !this.maskKept(id)).length;
+    return Math.max(11, Math.round(standing * 4 + r.spirits.length * 1.9));
+  }
+  risingDc() {
+    const r = this.g.rising;
+    return r.baseDc + (this.risingScene().dcMod || 0) + Math.min(MASK_DC_CAP, this.risingKeepers());
+  }
+  bestStat(id) {
+    const s = this.pstats(this.player(id));
+    return ['nerve', 'wits', 'brawn'].reduce((a, b) => (s[b] > s[a] ? b : a), 'nerve');
+  }
+  // A living player's total modifier for a stat in the current scene.
+  risingMod(id, stat) {
+    const sc = this.risingScene();
+    const s = this.pstats(this.player(id));
+    return (s[stat] || 0) * 2 + (stat === sc.favored ? FAVORED_BONUS : 0) + (stat === sc.poor ? -POOR_PENALTY : 0);
+  }
+
+  // The living choose a stance. `push` is the reckless option: a bonus now,
+  // and a failure costs an extra point of the town's resolve plus a point of
+  // sanity. A Masked who kept the mask picks a stance too — theirs performs
+  // the Play, and every landed roll takes a piece of the town instead.
+  risingPick(pid, stat, spend, push) {
     const g = this.g;
-    if (!g || g.phase !== 'rising' || !g.rising.participants.includes(pid)) return;
+    if (!g || g.phase !== 'rising') return;
+    const r = g.rising;
+    if (!r.living.includes(pid)) return;
+    if (this.role(pid) === 'cultist' && !r.masks[pid]) return; // must declare first
     if (!['brawn', 'wits', 'nerve'].includes(stat)) return;
     if (spend && !(g.items[pid] || []).length) spend = false;
-    g.rising.picks[pid] = { stat, spend };
-    if (g.rising.participants.every((id) => g.rising.picks[id])) this.resolveRisingRound(false);
+    if (this.maskKept(pid)) push = false; // nothing left of theirs to spend
+    r.picks[pid] = { stat, spend: !!spend, push: !!push };
+    this.checkRisingDone();
+  }
+
+  // The dead: lend two points to a living neighbor, or throw themselves at
+  // the King directly (harder, but the dead have no resolve left to lose).
+  risingSpirit(pid, mode, target) {
+    const g = this.g;
+    if (!g || g.phase !== 'rising') return;
+    const r = g.rising;
+    if (!r.spirits.includes(pid)) return;
+    if (mode === 'lend') {
+      if (!r.living.includes(target) || this.maskKept(target)) return;
+      r.spiritPicks[pid] = { mode: 'lend', target };
+    } else if (mode === 'wail') {
+      r.spiritPicks[pid] = { mode: 'wail', target: null };
+    } else return;
+    this.checkRisingDone();
+  }
+
+  // A surviving Masked declares, once and for all, which side of the curtain
+  // they are standing on. Keeping the mask means you go on performing: your
+  // rolls take the town's resolve instead of the King's verses, the dead will
+  // not lend you a hand, and every scene runs a little harder for everyone.
+  // It pays out — alone — if the King takes the stage.
+  risingMask(pid, keep) {
+    const g = this.g;
+    if (!g || g.phase !== 'rising') return;
+    const r = g.rising;
+    if (this.role(pid) !== 'cultist' || !r.living.includes(pid)) return;
+    if (r.masks[pid]) return; // no take-backs
+    r.masks[pid] = keep ? 'kept' : 'repented';
+    if (keep) { delete r.picks[pid]; this.fx('haunt'); }
+    this.checkRisingDone();
+  }
+
+  checkRisingDone() {
+    const r = this.g.rising;
+    for (const id of r.living) {
+      if (this.role(id) === 'cultist' && !r.masks[id]) return;
+      if (!r.picks[id]) return;
+    }
+    for (const id of r.spirits) if (!r.spiritPicks[id]) return;
+    this.resolveRisingRound(false);
   }
 
   resolveRisingRound(forced) {
     const g = this.g;
     if (g.phase !== 'rising') return;
     const r = g.rising;
-    r.lastRolls = [];
-    for (const id of r.participants) {
-      const pickd = r.picks[id] || { stat: 'nerve', spend: false };
-      const per = this.pstats(this.player(id));
-      let bonus = (per[pickd.stat] || 0) * 2;
-      if (pickd.spend && (g.items[id] || []).length) { g.items[id].pop(); bonus += 3; }
+    // Anyone who never answered the question takes the mask off by default —
+    // a phone in a pocket doesn't get to side with the King.
+    for (const id of r.living) if (this.role(id) === 'cultist' && !r.masks[id]) r.masks[id] = 'repented';
+    // Now that the sides are known, the Play's length is fixed.
+    if (r.verses === null) { r.verses = this.risingVerses(); r.versesLeft = r.verses; }
+    const scene = this.risingScene();
+    const dc = this.risingDc();
+    r.lastRolls = []; r.lastSpirits = []; r.lastDc = dc; r.lastScene = scene.id;
+    let versesOff = 0, resolveOff = 0;
+
+    // Spirits move first — a lent hand has to arrive before the living roll.
+    const lent = {};
+    for (const id of r.spirits) {
+      const sp = r.spiritPicks[id] || { mode: 'wail' };
+      if (sp.mode === 'lend' && r.living.includes(sp.target) && !this.maskKept(sp.target)) {
+        // No more than two of the dead can crowd one living soul: +4 is the ceiling.
+        lent[sp.target] = Math.min(LEND_CAP, (lent[sp.target] || 0) + 2);
+        r.tally[id].lends++;
+        r.lastSpirits.push({ id, mode: 'lend', target: sp.target });
+      } else {
+        // Wailing is uphill work: the dead roll flat, with no stat to lean on.
+        const die = 1 + rand(20);
+        const total = die + 4;
+        const ok = total >= dc;
+        if (ok) { versesOff++; r.tally[id].verses++; r.tally[id].successes++; }
+        else r.tally[id].fails++;
+        r.tally[id].best = Math.max(r.tally[id].best, total);
+        r.lastSpirits.push({ id, mode: 'wail', die, total, ok });
+      }
+    }
+
+    for (const id of r.living) {
+      const forKing = this.maskKept(id);
+      const pickd = r.picks[id] || { stat: this.bestStat(id), spend: false, push: false };
+      const favored = pickd.stat === scene.favored, poor = pickd.stat === scene.poor;
+      let bonus = this.risingMod(id, pickd.stat);
+      let burned = null;
+      if (pickd.spend && (g.items[id] || []).length) { burned = g.items[id].pop(); bonus += ITEM_BONUS; r.tally[id].burned++; }
+      if (!forKing && pickd.push) { bonus += PUSH_BONUS; r.tally[id].pushes++; }
+      const lend = forKing ? 0 : lent[id] || 0; // nobody dead lends a hand to a mask
+      bonus += lend;
       const die = 1 + rand(20);
       const total = die + bonus;
-      const ok = total >= r.dc;
-      if (ok) r.successes++;
-      r.lastRolls.push({ id, stat: pickd.stat, die, bonus, total, ok, spent: pickd.spend });
+      const crit = die === 20, fumble = die === 1;
+      const ok = crit || (!fumble && total >= dc);
+      let gain = 0, cost = 0;
+      if (forKing) {
+        // The performance lands: it comes straight out of the town.
+        if (ok) { cost = 1 + (crit ? 1 : 0); resolveOff += cost; r.tally[id].successes++; r.tally[id].kingHits += cost; }
+        else r.tally[id].fails++;
+      } else if (ok) {
+        gain = 1 + (favored ? 1 : 0) + (crit ? 1 : 0);
+        versesOff += gain;
+        r.tally[id].successes++; r.tally[id].verses += gain;
+      } else {
+        cost = 1 + (pickd.push ? 1 : 0) + (fumble ? 1 : 0);
+        resolveOff += cost;
+        r.tally[id].fails++;
+        if (pickd.push) this.loseSanity(id, 1);
+      }
+      r.tally[id].best = Math.max(r.tally[id].best, total);
+      r.lastRolls.push({ id, stat: pickd.stat, die, bonus, total, ok, crit, fumble, gain, cost, lend, favored, poor, forKing, push: !forKing && !!pickd.push, spent: !!burned, burned });
     }
-    r.picks = {};
+
+    r.versesLeft = Math.max(0, r.versesLeft - versesOff);
+    r.resolve = Math.max(0, r.resolve - resolveOff);
+    r.picks = {}; r.spiritPicks = {};
+    const beat = r.versesLeft <= 3 && r.versesLeft > 0 ? pick(RISING_BEATS.surge)
+      : r.resolve <= 2 && r.resolve > 0 ? pick(RISING_BEATS.grim)
+        : versesOff > resolveOff ? pick(RISING_BEATS.good) : pick(RISING_BEATS.bad);
+    r.lastBeat = beat;
+    r.log.push({ round: r.round, scene: scene.id, title: scene.title, dc, versesOff, resolveOff, versesLeft: r.versesLeft, resolve: r.resolve, sceneLine: versesOff > resolveOff ? scene.good : scene.bad, beat });
     this.fx('dice');
-    if (r.round >= r.rounds) {
-      return this.endGame(r.successes >= r.needed ? 'dawn' : 'oldone');
-    }
+
+    if (r.versesLeft <= 0) return this.endGame('dawn');
+    if (r.resolve <= 0) return this.endGame('oldone');
+    if (r.round >= r.rounds) return this.endGame('oldone');
     r.round++;
     this.setPhase('rising');
   }
@@ -1062,11 +1270,34 @@ export class Engine {
       v.whispersFeed = g.whispersFeed;
       v.cursed = Object.entries(g.curse).map(([id, c]) => ({ id, name: this.pname(id), text: CURSES.find((x) => x.id === c.curseId)?.text, broken: c.broken }));
     }
-    if (g.phase === 'vote') v.voteProgress = { voted: Object.keys(g.votes).filter((id) => this.alive(id)).length, total: g.alive.length };
+    if (g.phase === 'vote') v.voteProgress = { voted: Object.keys(g.votes).filter((id) => this.alive(id)).length, total: g.alive.length, threshold: this.voteThreshold() };
     if (g.phase === 'reveal') v.reveal = { ...g.reveal, name: g.reveal.banished ? this.pname(g.reveal.banished) : null, roleInfo: g.reveal.role ? ROLES[g.reveal.role] : null };
-    if (g.phase === 'rising') v.rising = { round: g.rising.round, rounds: g.rising.rounds, successes: g.rising.successes, needed: g.rising.needed, dc: g.rising.dc, lastRolls: g.rising.lastRolls.map((r) => ({ ...r, name: this.pname(r.id) })), picked: Object.keys(g.rising.picks).length, total: g.rising.participants.length, line: RISING_ROUNDS[Math.min(g.rising.round - 1, RISING_ROUNDS.length - 1)] };
+    if (g.phase === 'rising') v.rising = this.risingTvView();
     if (g.phase === 'gameover') v.ceremony = this.ceremonyView();
     return v;
+  }
+
+  risingTvView() {
+    const g = this.g, r = g.rising;
+    const scene = this.risingScene();
+    const shortName = (id) => this.pname(id).split(' ').slice(-1)[0];
+    const waitingLiving = r.living.filter((id) => !r.picks[id]).length;
+    const waitingSpirits = r.spirits.filter((id) => !r.spiritPicks[id]).length;
+    const rollers = r.living.length;
+    return {
+      round: r.round, rounds: r.rounds,
+      scene: { id: scene.id, title: scene.title, text: scene.text, favored: scene.favored, poor: scene.poor },
+      dc: this.risingDc(),
+      verses: r.verses, versesLeft: r.versesLeft,
+      resolve: r.resolve, resolveMax: r.resolveMax,
+      keepers: this.risingKeepers(),
+      picked: rollers + r.spirits.length - waitingLiving - waitingSpirits,
+      total: rollers + r.spirits.length,
+      lastRolls: r.lastRolls.map((x) => ({ ...x, name: shortName(x.id), item: x.burned ? ITEMS[x.burned]?.icon || null : null })),
+      lastSpirits: r.lastSpirits.map((x) => ({ ...x, name: shortName(x.id), targetName: x.target ? shortName(x.target) : null })),
+      lastBeat: r.lastBeat || null,
+      lastLine: r.log.length ? r.log[r.log.length - 1].sceneLine : null,
+    };
   }
 
   ceremonyView() {
@@ -1075,6 +1306,11 @@ export class Engine {
     if (!c) return null;
     return {
       ...c,
+      lastAct: c.lastAct ? {
+        ...c.lastAct,
+        keepers: c.lastAct.keepers.map((id) => this.pname(id)),
+        tally: c.lastAct.tally.map((t) => ({ ...t, name: this.pname(t.id) })),
+      } : null,
       roles: c.roles.map((r) => ({ ...r, name: this.pname(r.id), roleInfo: ROLES[r.role] })),
       titles: c.titles.map((t) => ({ ...t, name: this.pname(t.who) })),
       objectives: c.objectives.map((o) => ({ name: this.pname(o.id), obj: o.obj ? { text: OBJECTIVES.find((x) => x.id === o.obj.id)?.text, done: o.obj.done } : null })),
@@ -1188,7 +1424,12 @@ export class Engine {
       you.whisperUI = { remaining: Math.max(0, WHISPERS_PER_DAY - used), options: this.whisperOptions(), coolingDown: now() - g.lastWhisperAt < WHISPER_GAP };
     }
     if (g.phase === 'vote' && you.alive) {
-      you.voteUI = { submitted: !!g.votes[pid], choice: g.votes[pid] || null, targets: g.alive.filter((id) => id !== pid).map((id) => ({ id, name: this.pname(id) })) };
+      you.voteUI = {
+        submitted: !!g.votes[pid], choice: g.votes[pid] || null,
+        threshold: this.voteThreshold(),
+        eligible: g.alive.filter((id) => !g.curse[id]?.broken).length,
+        targets: g.alive.filter((id) => id !== pid).map((id) => ({ id, name: this.pname(id) })),
+      };
     }
     if (role === 'archivist' && g.lastArchive?.by === pid) {
       you.archive = { name: this.pname(g.lastArchive.target), loc: g.lastArchive.loc, day: g.lastArchive.day };
@@ -1201,7 +1442,27 @@ export class Engine {
     }
     you.stats = this.pstats(p);
     if (g.phase === 'rising' && g.rising.participants.includes(pid)) {
-      you.risingUI = { picked: !!g.rising.picks[pid], stats: this.pstats(p), canSpend: (g.items[pid] || []).length > 0, round: g.rising.round, rounds: g.rising.rounds };
+      const r = g.rising;
+      const scene = this.risingScene();
+      const living = r.living.includes(pid);
+      const kept = this.maskKept(pid);
+      const mustDeclare = living && role === 'cultist' && !r.masks[pid];
+      you.risingUI = {
+        kind: kept ? 'masked' : living ? 'living' : 'spirit',
+        round: r.round, rounds: r.rounds, dc: this.risingDc(),
+        verses: r.verses, versesLeft: r.versesLeft, resolve: r.resolve, resolveMax: r.resolveMax,
+        scene: { title: scene.title, text: scene.text, favored: scene.favored, poor: scene.poor, stances: scene.stances },
+        keepers: this.risingKeepers(),
+        mask: r.masks[pid] || null, mustDeclare,
+        picked: living ? !!r.picks[pid] : !!r.spiritPicks[pid],
+        pick: living ? r.picks[pid] || null : r.spiritPicks[pid] || null,
+        stats: this.pstats(p),
+        mods: living ? { brawn: this.risingMod(pid, 'brawn'), wits: this.risingMod(pid, 'wits'), nerve: this.risingMod(pid, 'nerve') } : null,
+        canSpend: (g.items[pid] || []).length > 0,
+        lendTargets: living ? null : r.living.filter((id) => !this.maskKept(id)).map((id) => ({ id, name: this.pname(id) })),
+        lastBeat: r.lastBeat || null,
+        lastLine: r.log.length ? r.log[r.log.length - 1].sceneLine : null,
+      };
     }
     if (g.phase === 'gameover') {
       v.ceremony = this.ceremonyView();

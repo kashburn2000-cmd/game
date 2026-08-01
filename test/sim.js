@@ -55,7 +55,7 @@ function doVote(engine, conns, target) {
 }
 
 // ---------------- content integrity ----------------
-import { LOCATIONS, NARRATION, PERSONAS, DOOM_LINES, INTERLUDES, RISING_ROUNDS, CURSES, WHISPERS, ITEMS } from '../src/engine/content.js';
+import { LOCATIONS, NARRATION, PERSONAS, DOOM_LINES, INTERLUDES, RISING_SCENES, RISING_BEATS, CURSES, WHISPERS, ITEMS } from '../src/engine/content.js';
 section('content integrity');
 function validOutcome(o) {
   if (!o || !o.text) return false;
@@ -80,7 +80,14 @@ ok(rareCount === 6, 'one rare scene per location');
 ok(PERSONAS.every((p) => p.death && p.death.length > 40), 'every persona has a bespoke death line');
 ok(DOOM_LINES.length === 4 && DOOM_LINES.every((t) => t.length > 0), 'doom lines cover all four tiers');
 ok(['town', 'cult', 'lunatic', 'dawn', 'oldone'].every((w) => INTERLUDES[w]?.length > 0), 'interludes cover every winner');
-ok(RISING_ROUNDS.length === 3, 'rising narration covers three rounds');
+ok(RISING_SCENES.length === 5, 'the Last Act runs five scenes');
+ok(RISING_SCENES.every((s) => s.title && s.text && s.good && s.bad &&
+  ['brawn', 'wits', 'nerve'].includes(s.favored) && ['brawn', 'wits', 'nerve'].includes(s.poor) &&
+  s.favored !== s.poor && ['brawn', 'wits', 'nerve'].every((k) => s.stances[k])), 'every Last Act scene is well-formed');
+ok(new Set(RISING_SCENES.map((s) => s.favored)).size === 3 && new Set(RISING_SCENES.map((s) => s.poor)).size === 3,
+  'the Last Act favors and punishes all three stats across its scenes');
+ok(['good', 'bad', 'grim', 'surge'].every((k) => RISING_BEATS[k]?.length > 0), 'Last Act beats cover every mood');
+ok(NARRATION.shortfall.length > 1 && NARRATION.silence.length > 1, 'failed-threshold narration has variants');
 ok(new Set(CURSES.map((c) => c.id)).size === CURSES.length, 'curse ids unique');
 ok(new Set(WHISPERS).size === WHISPERS.length, 'whispers unique');
 const totalScenes = Object.values(LOCATIONS).reduce((a, l) => a + l.scenes.length, 0);
@@ -260,17 +267,186 @@ g = engine.s.game;
 ok(g.phase === 'rising', 'finale parity triggers The Rising (got: ' + g.phase + ')');
 views(engine, conns);
 
-section('The Rising: three rounds of dice');
+section('The Last Act: scenes, stances, spirits, and the mask');
+const r0 = engine.s.game.rising;
+ok(r0.rounds === 5 && r0.round === 1, 'the Last Act opens on scene 1 of 5');
+ok(r0.verses === null && r0.versesLeft === null, 'the Play’s length is uncounted until the Masked declare');
+ok(r0.resolve === r0.resolveMax && r0.resolveMax >= 5, 'the town starts at full resolve');
+ok(r0.living.length + r0.spirits.length === r0.participants.length, 'everyone is sorted into living or dead');
+const risingTv = engine.viewFor({ role: 'tv', playerId: null }).rising;
+ok(risingTv.scene.title && risingTv.scene.favored && risingTv.dc >= 11, 'TV shows the scene, its favored stat, and the bar');
+
+// A living Masked must declare before they may take a stance.
+const maskConn = conns.find((c) => engine.s.game.rising.living.includes(c.playerId) && engine.role(c.playerId) === 'cultist');
+if (maskConn) {
+  engine.handle(maskConn, { type: 'risingPick', stat: 'nerve' });
+  ok(!engine.s.game.rising.picks[maskConn.playerId], 'a Masked cannot roll before declaring');
+  const mv = engine.viewFor(maskConn).you.risingUI;
+  ok(mv.mustDeclare === true, 'their phone demands the declaration');
+  engine.handle(maskConn, { type: 'risingMask', keep: true });
+  ok(engine.s.game.rising.masks[maskConn.playerId] === 'kept', 'the Masked may keep the mask on');
+  ok(engine.risingDc() > engine.s.game.rising.baseDc, 'a kept mask stiffens the scene');
+  engine.handle(maskConn, { type: 'risingMask', keep: false });
+  ok(engine.s.game.rising.masks[maskConn.playerId] === 'kept', 'the declaration is final — no take-backs');
+  engine.handle(maskConn, { type: 'risingPick', stat: 'nerve', push: true });
+  const kp = engine.s.game.rising.picks[maskConn.playerId];
+  ok(kp && kp.stat === 'nerve' && kp.push === false, 'a keeper still performs each scene, but has nothing of their own to spend');
+  const kv = engine.viewFor(maskConn).you.risingUI;
+  ok(kv.kind === 'masked' && kv.mods, 'their phone keeps the stance controls, on the other side');
+}
+
+// One full scene, played the way a table would: living take stances, dead
+// split between lending strength and wailing.
+function playRisingRound(e, cs) {
+  const r = e.s.game.rising;
+  const sc = RISING_SCENES[Math.min(r.round - 1, RISING_SCENES.length - 1)];
+  let livingIdx = 0, spiritIdx = 0;
+  for (const c of cs) {
+    const id = c.playerId;
+    if (r.living.includes(id)) {
+      if (e.role(id) === 'cultist' && !r.masks[id]) e.handle(c, { type: 'risingMask', keep: false });
+      e.handle(c, { type: 'risingPick', stat: sc.favored, spend: true, push: livingIdx++ === 0 });
+    } else if (r.spirits.includes(id)) {
+      const live = r.living.filter((x) => !e.maskKept(x));
+      if (spiritIdx++ % 2 === 0 && live.length) e.handle(c, { type: 'risingSpirit', mode: 'lend', target: live[0] });
+      else e.handle(c, { type: 'risingSpirit', mode: 'wail' });
+    }
+  }
+}
+const spiritConn = conns.find((c) => engine.s.game.rising.spirits.includes(c.playerId));
+if (spiritConn) {
+  const sv = engine.viewFor(spiritConn).you.risingUI;
+  ok(sv.kind === 'spirit' && Array.isArray(sv.lendTargets), 'the dead get a spirit controller with lend targets');
+}
+const beforeResolve = engine.s.game.rising.resolve;
+playRisingRound(engine, conns);
+g = engine.s.game;
+ok(g.phase !== 'rising' || g.rising.round === 2, 'a completed scene advances the Last Act');
+ok(g.rising.log.length >= 1, 'the scene is recorded in the log');
+const l0 = g.rising.log[0];
+ok(l0.versesOff + l0.resolveOff > 0, 'the scene moved at least one of the two tracks');
+ok(typeof g.rising.verses === 'number' && g.rising.verses >= 11, 'the verse count is struck once the sides are known');
+ok(g.rising.versesLeft <= g.rising.verses && g.rising.resolve <= beforeResolve, 'both tracks only ever move downward');
+ok(g.rising.lastRolls.length > 0, 'the living rolled and the TV can show it');
+ok(engine.s.game.rising.living.every((id) => engine.s.game.rising.masks[id] || engine.role(id) !== 'cultist'),
+  'every surviving Masked ends scene one with a declaration on the record');
+
 let round = 0;
-while (engine.s.game.phase === 'rising' && round++ < 5) {
-  for (const c of conns) engine.handle(c, { type: 'risingPick', stat: 'nerve', spend: false });
+while (engine.s.game.phase === 'rising' && round++ < 8) {
+  playRisingRound(engine, conns);
   views(engine, conns);
 }
 g = engine.s.game;
-ok(g.phase === 'gameover', 'Rising concludes');
-ok(['dawn', 'oldone'].includes(g.winner), 'Rising has a verdict: ' + g.winner);
+ok(g.phase === 'gameover', 'the Last Act concludes');
+ok(['dawn', 'oldone'].includes(g.winner), 'the Last Act has a verdict: ' + g.winner);
 ok(g.ceremony && g.ceremony.line, 'finale ceremony narrates');
+const la = engine.ceremonyView().lastAct;
+ok(la && la.rounds >= 1 && la.of === 5, 'the ceremony reviews the performance');
+ok(Array.isArray(la.tally) && la.tally.every((t) => t.name), 'the review names who did what');
+if (maskConn) {
+  const keptSigns = engine.s.campaign.signs[maskConn.playerId] || 0;
+  ok(g.winner !== 'oldone' || keptSigns >= 4, 'a mask kept to the end pays out when the King takes the stage');
+  ok(la.keepers.length === 1, 'the review names the one who never took it off');
+}
 views(engine, conns);
+
+// ---------------- the Last Act, unattended ----------------
+section('the Last Act survives a table that stops answering its phones');
+const eL = new Engine(newRoom('LAST'));
+const cL = [];
+for (let i = 0; i < 8; i++) { const c = { role: 'player', playerId: null }; eL.handle(c, { type: 'join', name: 'L' + i }); cL.push(c); }
+eL.s.campaign.doom = 5;
+eL.handle(cL[0], { type: 'start', final: true });
+{
+  const gL = eL.s.game;
+  const cult = gL.alive.filter((id) => gL.roles[id] === 'cultist');
+  while (cult.length < gL.alive.length - cult.length) {
+    const victim = gL.alive.find((id) => !cult.includes(id));
+    gL.alive = gL.alive.filter((id) => id !== victim);
+    gL.spirits.push(victim);
+  }
+  eL.startRising();
+}
+ok(eL.s.game.phase === 'rising', 'the Last Act can be opened directly');
+let guardL = 0;
+while (eL.s.game.phase === 'rising' && guardL++ < 8) {
+  eL.handle(cL[0], { type: 'forceAdvance' }); // nobody picked; the timer decides
+  views(eL, cL);
+}
+ok(eL.s.game.phase === 'gameover', 'an unattended Last Act still reaches a verdict');
+ok(eL.s.game.rising.log.length >= 1, 'forced scenes are still played and logged');
+ok(eL.s.game.rising.living.every((id) => eL.role(id) !== 'cultist' || eL.s.game.rising.masks[id] === 'repented'),
+  'a Masked who never answers is taken to have removed the mask');
+ok(eL.s.game.rising.log.every((l) => l.versesOff >= 0 && l.resolveOff >= 0), 'forced scenes produce sane numbers');
+ok(typeof eL.ceremonyView().lastAct.rounds === 'number', 'the forced finale still files a review');
+
+// ---------------- the voting threshold ----------------
+section('the voting threshold: a lone voter cannot banish a town');
+const eV = new Engine(newRoom('VOTE'));
+const cV = [];
+for (let i = 0; i < 6; i++) { const c = { role: 'player', playerId: null }; eV.handle(c, { type: 'join', name: 'V' + i }); cV.push(c); }
+eV.handle(cV[0], { type: 'start' });
+let gV = eV.s.game;
+// Skip the night entirely: force it, then walk to the vote.
+eV.handle(cV[0], { type: 'forceAdvance' }); // night -> dawn
+advanceTimer(eV); // dawn -> day
+ok(eV.s.game.phase === 'day', 'threshold test reached day 1');
+eV.handle(cV[0], { type: 'skipToVote' });
+gV = eV.s.game;
+const aliveV = gV.alive;
+ok(eV.voteThreshold() === Math.ceil(aliveV.length / 2), `threshold is half the living town, rounded up (${eV.voteThreshold()} of ${aliveV.length})`);
+const tv0 = eV.viewFor({ role: 'tv', playerId: null });
+ok(tv0.voteProgress.threshold === eV.voteThreshold(), 'the TV publishes the threshold during the vote');
+const pv0 = eV.viewFor(cV.find((c) => aliveV.includes(c.playerId))).you.voteUI;
+ok(pv0.threshold === eV.voteThreshold() && pv0.eligible === aliveV.length, 'phones publish the threshold and the eligible count');
+
+// One voter, everyone else abstains: the accused walks.
+const loneVoter = aliveV[0], accused = aliveV[1];
+for (const c of cV) {
+  if (!aliveV.includes(c.playerId)) continue;
+  eV.handle(c, { type: 'vote', target: c.playerId === loneVoter ? accused : 'abstain' });
+}
+gV = eV.s.game;
+ok(gV.phase === 'reveal', 'the vote still resolves once everyone has answered');
+ok(gV.reveal.banished === null, 'a single vote against a town of five-plus banishes no one');
+ok(gV.reveal.reason === 'short' && gV.reveal.top === 1, 'the reveal reports a shortfall, not a tie');
+ok(gV.reveal.line.includes(String(gV.reveal.threshold)), 'the narration names the bar that was missed');
+
+// Re-open the meeting hall without playing another night — the tally is what
+// is under test here, not the rest of the machine.
+const reopenVote = (e, c) => { e.s.game.phase = 'day'; e.handle(c, { type: 'skipToVote' }); };
+
+// A full abstention reads as silence, not deadlock.
+reopenVote(eV, cV[0]);
+doVote(eV, cV, 'abstain');
+ok(eV.s.game.reveal.reason === 'silence', 'a town that names nobody gets its own verdict');
+ok(eV.s.game.reveal.banished === null, 'silence banishes no one');
+
+// Two names, evenly split, is still a tie rather than a shortfall.
+reopenVote(eV, cV[0]);
+gV = eV.s.game;
+const liveV = gV.alive;
+liveV.forEach((id, i) => {
+  const target = liveV[i % 2 === 0 ? (i + 1) % liveV.length : (i + 2) % liveV.length];
+  eV.handle(cV.find((c) => c.playerId === id), { type: 'vote', target: target === id ? 'abstain' : target });
+});
+if (eV.s.game.phase !== 'reveal') eV.tally();
+ok(eV.s.game.reveal.banished === null, 'a split vote banishes no one');
+
+// Meeting the bar still works: the whole town names one person.
+reopenVote(eV, cV[0]);
+gV = eV.s.game;
+const mark = gV.alive[1];
+doVote(eV, cV, mark);
+gV = eV.s.game;
+ok(gV.reveal.banished === mark, 'a town that agrees still casts people out');
+ok(gV.reveal.top >= gV.reveal.threshold, 'the banishment cleared the bar');
+
+// Silenced voters lower the bar rather than propping it up.
+const beforeBar = eV.voteThreshold();
+eV.s.game.curse[eV.s.game.alive[0]] = { curseId: 'questions', broken: true };
+ok(eV.voteThreshold() <= beforeBar, 'a forfeited vote never raises the bar it cannot help clear');
+views(eV, cV);
 
 // ---------------- misc: late join + reconnect + forced night ----------------
 section('misc behaviors');

@@ -496,6 +496,19 @@ export const NARRATION = {
     () => `Deadlock. The townsfolk glare at one another and disperse. The only winner today is the thing in the mist.`,
     () => `The vote splits clean down the middle, like a stage trapdoor. No one is banished, and everyone walks home the long way, in pairs, watching each other.`,
   ],
+  // The leader of the vote failed to reach the town's threshold: (name, count, need).
+  shortfall: [
+    (n, c, need) => `${P(n)} draws ${c} vote${c === 1 ? '' : 's'} — and Castaigne needs ${need} before it will put a neighbor out past the wards. The motion dies on the meeting-hall floor. No one is banished.`,
+    (n, c, need) => `The clerk counts twice: ${c} for ${P(n)}, against a bar of ${need}. "That's not a town speaking," the clerk says, "that's a few people whispering." No one is banished.`,
+    (n, c, need) => `A handful of hands go up for ${P(n)} — ${c} of the ${need} required. Not enough. The town has learned, expensively, what a small confident minority is worth. No one is banished.`,
+    (n, c, need) => `${P(n)} survives on arithmetic: ${c} accusers where ${need} were needed. Half the hall abstained, and abstention, it turns out, is its own kind of verdict. No one is banished.`,
+  ],
+  // Nobody put a name forward at all.
+  silence: [
+    () => `Not one name is spoken aloud. The town sits in the meeting hall, shoulder to shoulder, and declines — unanimously, silently — to accuse anyone of anything. No one is banished. Somewhere, something writes this down approvingly.`,
+    () => `The vote comes back empty. Every ballot abstained, every mouth stayed shut, and the fog outside the windows thickens with what can only be described as gratitude. No one is banished.`,
+    () => `Castaigne holds its tongue. The clerk records the result as "NO CONFIDENCE, IN ANYTHING," rules the meeting adjourned, and goes home the long way. No one is banished.`,
+  ],
   banishInnocent: [
     (n, r) => `The town drags ${P(n)} to the crossroads and casts them out. In their pockets: nothing but ${r === 'lunatic' ? 'asylum release papers, dated tomorrow' : 'a library card and an honest life'}. The town has made a terrible mistake. Again.`,
     (n, r) => `${P(n)} protests to the end — and the end comes anyway. They were ${r === 'townsfolk' ? 'exactly what they claimed: innocent' : 'innocent all along'}. The vote count is quietly burned.`,
@@ -618,12 +631,72 @@ export const INTERLUDES = {
   ],
 };
 
-// ---- The Last Act: round-by-round narration ----
-export const RISING_ROUNDS = [
-  `The house lights die across the whole sky. The King is in the wings. Barricade, counter-chant, or stare down the stage — but do it NOW.`,
-  `Half the town is audience now, seated in rows in the mist. The counter-chant is working — or it's the overture. Hold the line either way.`,
-  `The final scene. The tattered mantle fills the sky above the Palace. Whatever you have left, Castaigne — spend it before the bow.`,
+// ---- The Last Act: the boss finale, scene by scene ----
+// Each scene is one round of the fight and has its own shape:
+//   favored — spending this stat rolls at +2 and unweaves an extra verse.
+//   poor    — this stat rolls at -2 here; the wrong tool for this scene.
+//   dcMod   — how much harder this scene is than the evening's baseline.
+// `stances` name the three stat choices in this scene's own language, so the
+// phone never just says "pick a stat."
+export const RISING_SCENES = [
+  {
+    id: 'houselights', title: 'THE HOUSE LIGHTS DIE', favored: 'nerve', poor: 'wits', dcMod: 0,
+    text: `Every lamp in Castaigne dims at once, lakefront upward, in a slow professional fade. The mist rolls into the streets and settles like an audience finding its seats. Above the Palace, something enormous and tattered takes its position in the wings. There is no thinking your way through the first minute of this. There is only standing where you are and letting it see you do it.`,
+    stances: { brawn: 'Bar the doors and the shutters', wits: 'Search the dark for the trick of it', nerve: 'Stand in the open and be counted' },
+    good: `The fade stops halfway. For a moment the streetlamps come back up, unsteady, and half of Castaigne is still standing in the light where it left off.`,
+    bad: `The dark finishes closing. Somewhere in it, a great deal of velvet moves, and the town takes an involuntary step back as one body.`,
+  },
+  {
+    id: 'overture', title: 'THE OVERTURE', favored: 'wits', poor: 'brawn', dcMod: 0,
+    text: `The lake begins the overture, and every window in town rings in the same key. The tune has a shape; the shape has a grammar; and anyone who can hear where the phrase repeats can sing it back WRONG. Muscle has never once won an argument with a chord.`,
+    stances: { brawn: 'Smash every window that rings', wits: 'Find the repeat and foul the phrase', nerve: 'Sing something filthy over the top' },
+    good: `The overture stumbles into a bar it has never played before, and has to start the passage again. The lake sounds, for the first time in living memory, embarrassed.`,
+    bad: `The phrase resolves. Down every street, people are humming it who cannot remember starting.`,
+  },
+  {
+    id: 'procession', title: 'THE PROCESSION', favored: 'brawn', poor: 'nerve', dcMod: 1,
+    text: `The audience comes up Main Street in rows — seated as they walk, applauding in perfect time. The neighbors. The drowned. Everyone who bought advance tickets. They want the Palace doors open, and those doors are the last thing between this town and its cue. Staring them down does nothing. They are not looking at you. They are looking past you, at the stage.`,
+    stances: { brawn: 'Put your shoulder to the doors', wits: 'Re-block the whole procession', nerve: 'Step into the aisle and refuse to move' },
+    good: `The front row breaks stride. The applause loses the beat, and for half a block the procession is just a crowd of confused people in their good coats.`,
+    bad: `The doors give an inch. The applause comes through the gap ahead of the crowd, warm and enormous, and finds seats.`,
+  },
+  {
+    id: 'secondact', title: 'THE SECOND ACT', favored: 'wits', poor: 'nerve', dcMod: 1,
+    text: `The Play reaches the act nobody in this town has finished reading — and it reaches it THROUGH you. Your mouth. Your voice. Lines you never learned, arriving fully rehearsed. Nerve is no defense; the brave deliver it beautifully. The only way out is through the text: find the seam, drop the cue, ruin the scansion.`,
+    stances: { brawn: 'Bite down and force the words back', wits: 'Break the meter on purpose', nerve: 'Say your own name until it takes' },
+    good: `Somebody fluffs a line — gloriously, deliberately, in the wrong meter — and the whole act lurches. The Play has to take it from the top of the page.`,
+    bad: `The act plays clean through the town like a bow across a string. Nobody stumbles. That is the worst part: nobody stumbles.`,
+  },
+  {
+    id: 'curtaincall', title: 'THE CURTAIN CALL', favored: 'nerve', poor: 'brawn', dcMod: 2,
+    text: `The tattered mantle fills the whole sky above the Palace, and it turns — unhurried, gracious, ruinous — to take its bow. There is nothing left to barricade and nothing left to outthink. Everything now rests on one stubborn municipal fact: a bow cannot be finished if nobody claps.`,
+    stances: { brawn: 'Tear down what is left of the house', wits: 'Call the cue before it can', nerve: 'Sit on your hands and refuse it' },
+    good: `The bow hangs, unreturned, in a silence with the whole town's weight behind it. Something up there waits to be told it was wonderful, and is not told.`,
+    bad: `A few hands begin to clap. They are not being made to. That is what carries across the water.`,
+  },
 ];
+
+// ---- Between-round status beats for the Last Act ----
+export const RISING_BEATS = {
+  good: [
+    `The verse frays. Somewhere out in the mist, a stage manager swears in a language with too many vowels.`,
+    `Castaigne gains a yard. Nobody could tell you how, and everybody keeps doing whatever it was.`,
+    `The Play checks its promptbook. The town has gone off-script and the Play, briefly, does not know the line.`,
+  ],
+  bad: [
+    `The town gives ground. Not much. Enough that everyone notices the sound of their own footsteps going backward.`,
+    `Something up there is enjoying this, and enjoyment is worse than malice — malice, at least, can be finished.`,
+    `Another neighbor sits down in the mist, folds their hands, and begins to watch. Nobody says their name out loud.`,
+  ],
+  grim: [
+    `Castaigne is nearly spent. There are more seats filled than streets left. Whatever is going to be done had better be done in the next minute.`,
+    `The town's resolve is down to the stubborn few, and the stubborn few are hoarse. The mist comes up the steps.`,
+  ],
+  surge: [
+    `The King's verses are nearly unwound. The sky above the Palace has begun to hang WRONG, like scenery on a slack rope.`,
+    `Two or three lines left in the whole terrible thing. Castaigne can hear the end of it, and the end of it sounds like an ordinary night.`,
+  ],
+};
 
 // ---- Name-keyed easter eggs ----
 // If a player joins with one of these real names, the game quietly knows.

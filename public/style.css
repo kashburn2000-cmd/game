@@ -117,6 +117,35 @@ body {
 .roll { padding: .25rem .7rem; border-radius: 2rem; font-size: clamp(.8rem, 1.5vw, 1.1rem); background: #16202b; border: 1px solid #2a3846; }
 .roll.ok { border-color: var(--glow); color: var(--glow); }
 .roll.bad { border-color: var(--doom); color: #d9a49c; }
+.roll.crit { box-shadow: 0 0 14px var(--glow); font-weight: bold; }
+.roll.fumble { box-shadow: 0 0 14px rgba(192, 57, 43, .7); }
+.roll.lend { border-color: #6b7f93; color: #b9c8d6; }
+
+/* ---------- The Last Act ---------- */
+.scenetitle { letter-spacing: .16em; color: var(--gold); font-size: clamp(1.1rem, 2.8vw, 2rem); }
+.risingbar.resolve { height: 1.6rem; }
+.risingfill.resolve { background: linear-gradient(90deg, #8a5a2b, var(--gold)); }
+.stanceline { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: center; }
+.stancetag { padding: .2rem .8rem; border-radius: 2rem; border: 1px solid #2a3846; background: #16202b;
+  font-size: clamp(.75rem, 1.5vw, 1rem); color: var(--parchment-dim); }
+.stancetag.good { border-color: var(--glow); color: var(--glow); }
+.stancetag.bad { border-color: var(--doom); color: #d9a49c; }
+.stancetag.mask { border-color: var(--gold); color: var(--gold); }
+.narr.beat { font-style: italic; }
+.narr.beat.dim { opacity: .72; }
+.trackrow { display: flex; flex-wrap: wrap; gap: .4rem; margin: .5rem 0; }
+.track { padding: .2rem .7rem; border-radius: 2rem; border: 1px solid #2a3846; background: #16202b; font-size: .85rem; }
+.track.verses { border-color: var(--glow); color: var(--glow); }
+.track.resolve { border-color: var(--gold); color: var(--gold); }
+.maskcard { border: 1px solid var(--gold); background: rgba(212,175,55,.08); border-radius: .6rem;
+  padding: .7rem .9rem; margin: .6rem 0; font-size: .92rem; }
+.targetbtn small.favored { display: block; color: var(--glow); }
+.targetbtn small.poorstat { display: block; color: #d9a49c; }
+
+/* the town's voting bar */
+.thresholdcard { border: 1px solid #3a4a5a; background: rgba(16,24,32,.75); border-radius: .6rem;
+  padding: .7rem .9rem; margin: .6rem 0; font-size: .92rem; }
+.tallycard { font-size: clamp(.9rem, 2vw, 1.4rem); color: var(--parchment-dim); letter-spacing: .05em; }
 
 .gameover .endline { font-size: clamp(1.2rem, 2.6vw, 2rem); max-width: 70ch; }
 .gameover.doomed .endline { color: #e8a39b; }
