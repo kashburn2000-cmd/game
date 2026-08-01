@@ -7,7 +7,7 @@
 
   let ws = null, view = null, role = null, code = null, screen = 'landing';
   let timeOffset = 0, lastFxSeq = -1, lastPhaseKey = '', reconnectTries = 0, connBanner = false;
-  let hauntSel = {}, gravedirtMode = false, watchMode = false, spendItem = false;
+  let hauntSel = {}, gravedirtMode = false, watchMode = false, spendItem = false, pushSelf = false;
   let saved = {};
   try { saved = JSON.parse(localStorage.getItem('soa') || '{}'); } catch { }
   saved.rooms = saved.rooms || {};
@@ -69,7 +69,7 @@
     const needsAction =
       (view.phase === 'night' && y.nightUI && !(y.nightUI.submitted || y.nightUI.result)) ||
       (view.phase === 'vote' && y.voteUI && !y.voteUI.submitted) ||
-      (view.phase === 'rising' && y.risingUI && !y.risingUI.picked);
+      (view.phase === 'rising' && y.risingUI && y.risingUI.kind !== 'masked' && !y.risingUI.picked);
     const key = view.phase + ':' + view.day + ':' + (view.phase === 'rising' ? y.risingUI?.round : '');
     if (needsAction && key !== lastBuzzKey) { lastBuzzKey = key; navigator.vibrate([120, 80, 200]); }
   }
@@ -87,6 +87,7 @@
   }, 400);
 
   // ---------- shared bits ----------
+  const STATLABEL = { brawn: '💪 BRAWN', wits: '🧠 WITS', nerve: '🕯 NERVE' };
   const doomTrack = (doom) => `
     <div class="doomtrack" title="Doom">
       <span class="doomlabel">DOOM</span>
@@ -202,36 +203,67 @@
             <h2 class="phasetitle">JUDGMENT</h2>
             <p class="narr">The town votes in silence. Phones only. No take-backs.</p>
             <div class="voteprogress">${v.voteProgress ? `${v.voteProgress.voted} / ${v.voteProgress.total} votes cast` : ''}</div>
+            ${v.voteProgress ? `<p class="hint">It takes <b>${v.voteProgress.threshold}</b> votes on one name to cast anyone out. Abstaining does not lower the bar.</p>` : ''}
             <div class="timer big" data-deadline="${v.deadline}"></div>
             ${(v.whispersFeed || []).slice(-2).map((w) => `<p class="whisper">🕯 ${esc(w.text)}</p>`).join('')}
           </div>`;
         break;
       case 'reveal': {
         const r = v.reveal || {};
+        const NOBANISH = { tie: 'DEADLOCK', short: 'NO MAJORITY', silence: 'THE TOWN HOLDS ITS TONGUE' };
         body = `
           <div class="scene reveal">
             ${r.tie
-            ? `<h2 class="phasetitle">DEADLOCK</h2><p class="narr revealline">${esc(r.line)}</p>`
+            ? `<h2 class="phasetitle">${esc(NOBANISH[r.reason] || 'DEADLOCK')}</h2>
+               ${r.reason === 'short' ? `<div class="tallycard">${esc(r.topName || '')} — <b>${r.top}</b> of the <b>${r.threshold}</b> votes required</div>` : ''}
+               <p class="narr revealline">${esc(r.line)}</p>`
             : `<h2 class="phasetitle">THE TOWN HAS SPOKEN</h2>
                <div class="revealcard">
                  <div class="revealname">${esc(r.name)}</div>
                  <div class="revealrole">${r.roleInfo ? `${r.roleInfo.icon} ${esc(r.roleInfo.name).toUpperCase()}` : ''}</div>
                </div>
+               <div class="tallycard">cast out on <b>${r.top}</b> of ${r.threshold} required votes</div>
                <p class="narr revealline">${esc(r.line)}</p>`}
           </div>`;
         break;
       }
       case 'rising': {
         const r = v.rising || {};
+        const sc = r.scene || {};
+        const counted = r.verses != null;
+        const unwound = counted ? Math.max(0, r.verses - r.versesLeft) : 0;
+        const versePct = counted && r.verses ? (unwound / r.verses) * 100 : 0;
+        const resolvePct = r.resolveMax ? (r.resolve / r.resolveMax) * 100 : 0;
+        const sgn = (n) => (n >= 0 ? '+' : '') + n;
         body = `
           <div class="scene rising">
             <div class="oldone">👑</div>
-            <h2 class="phasetitle doomtext">THE LAST ACT — ROUND ${r.round} of ${r.rounds}</h2>
-            <p class="narr">${esc(r.line || 'All of Castaigne — the living, the dead, and the deeply embarrassed Masked — stands together against the King.')}</p>
-            <div class="risingbar"><div class="risingfill" style="width:${Math.min(100, (r.successes / r.needed) * 100)}%"></div>
-              <span class="risinglabel">${r.successes} / ${r.needed} verses unwoven · need ${r.dc}+ on the die</span></div>
+            <h2 class="phasetitle doomtext">THE LAST ACT — SCENE ${r.round} of ${r.rounds}</h2>
+            <h3 class="scenetitle">${esc(sc.title || '')}</h3>
+            <p class="narr">${esc(sc.text || '')}</p>
+            <div class="stanceline">
+              <span class="stancetag good">favored: ${esc(STATLABEL[sc.favored] || '')}</span>
+              <span class="stancetag bad">poor: ${esc(STATLABEL[sc.poor] || '')}</span>
+              <span class="stancetag">the die must beat <b>${r.dc}</b></span>
+              ${r.keepers ? `<span class="stancetag mask">🎭 ${r.keepers} still masked — performing against the town</span>` : ''}
+            </div>
+            <div class="risingbar"><div class="risingfill" style="width:${Math.min(100, versePct)}%"></div>
+              <span class="risinglabel">${counted ? `${unwound} / ${r.verses} of the King’s verses unwound` : 'nobody knows how long the Play runs until it knows who is in it'}</span></div>
+            <div class="risingbar resolve"><div class="risingfill resolve" style="width:${Math.min(100, resolvePct)}%"></div>
+              <span class="risinglabel">${r.resolve} / ${r.resolveMax} of Castaigne’s resolve remains</span></div>
+            ${r.lastLine ? `<p class="narr beat">${esc(r.lastLine)}</p>` : ''}
+            ${r.lastBeat ? `<p class="narr beat dim">${esc(r.lastBeat)}</p>` : ''}
             <p class="waiting">${r.picked} / ${r.total} have chosen their stand</p>
-            <div class="rolls">${(r.lastRolls || []).map((x) => `<span class="roll ${x.ok ? 'ok' : 'bad'}">${esc(x.name.split(' ').slice(-1)[0])} 🎲${x.die}+${x.bonus}=${x.total}</span>`).join('')}</div>
+            <div class="rolls">${(r.lastRolls || []).map((x) => {
+              const good = x.forKing ? !x.ok : x.ok;
+              const effect = x.forKing
+                ? (x.ok ? '−' + x.cost + ' resolve' : 'the performance falters')
+                : (x.ok ? '−' + x.gain + ' verse' + (x.gain === 1 ? '' : 's') : '−' + x.cost + ' resolve');
+              return `<span class="roll ${good ? 'ok' : 'bad'}${x.crit ? ' crit' : ''}${x.fumble ? ' fumble' : ''}">${x.forKing ? '🎭 ' : ''}${esc(x.name)} 🎲${x.die}${sgn(x.bonus)}=${x.total}${x.favored ? ' ★' : ''}${x.push ? ' ⚡' : ''}${x.item ? ' ' + x.item : ''}${x.lend ? ' 👻+' + x.lend : ''} ${effect}</span>`;
+            }).join('')}</div>
+            <div class="rolls">${(r.lastSpirits || []).map((x) => x.mode === 'lend'
+              ? `<span class="roll lend">👻 ${esc(x.name)} → ${esc(x.targetName)} +2</span>`
+              : `<span class="roll ${x.ok ? 'ok' : 'bad'}">👻 ${esc(x.name)} wails 🎲${x.die}+4=${x.total}${x.ok ? ' −1 verse' : ''}</span>`).join('')}</div>
             <div class="timer tiny" data-deadline="${v.deadline}"></div>
           </div>`;
         break;
@@ -255,6 +287,7 @@
                 <div class="c-col c-lead">
                   <p>${esc(c.line || '')}</p>
                   ${c.interlude ? `<p class="c-inter">${esc(c.interlude)}</p>` : ''}
+                  ${lastActColumn(c.lastAct)}
                   <div class="c-sec">WEATHER</div>
                   <p class="c-small">${esc(c.doomLine || 'Mist.')}</p>
                 </div>
@@ -280,6 +313,21 @@
       }
     }
     app.innerHTML = `${banner}<div class="tv phase-${v.phase}">${body}</div>`;
+  }
+
+  // The finale gets its own column in the morning edition.
+  function lastActColumn(la) {
+    if (!la) return '';
+    const unwound = la.verses - la.versesLeft;
+    const loud = (la.tally || []).filter((t) => t.verses > 0).slice(0, 3)
+      .map((t) => `${esc(t.name)} (${t.verses})`).join(', ');
+    const hands = (la.tally || []).filter((t) => !t.verses && t.lends > 0).length;
+    return `
+      <div class="c-sec">THE LAST ACT — A REVIEW</div>
+      <p class="c-small">The performance ran <b>${la.rounds}</b> of ${la.of} scenes. Castaigne unwound <b>${unwound} of ${la.verses}</b> verses and finished with <b>${la.resolve} of ${la.resolveMax}</b> resolve.</p>
+      ${loud ? `<p class="c-small">🎻 Loudest in the din: ${loud}${hands ? ` — with ${hands} pair${hands === 1 ? '' : 's'} of cold hands behind them` : ''}.</p>` : ''}
+      ${la.keepers.length ? `<p class="c-small">🎭 Never took it off: <b>${la.keepers.map(esc).join(', ')}</b>.</p>` : ''}
+      <p class="c-small">Scene ledger (verses/resolve): ${(la.log || []).map((l) => `<b>−${l.versesOff}</b>/−${l.resolveOff}`).join(' · ')}</p>`;
   }
 
   function signsBoard(v) {
@@ -477,9 +525,11 @@
       return out;
     }
     const ui = y.voteUI;
-    if (ui?.submitted) return `<h2>JUDGMENT</h2><p class="hint">Your vote is cast. No take-backs. Maintain eye contact with no one.</p>`;
+    const bar = ui ? `<div class="thresholdcard">⚖️ <b>${ui.threshold}</b> of the ${ui.eligible} voting townsfolk must name the same person, or nobody goes. <i>Abstaining doesn’t lower the bar — it raises it for everyone else.</i></div>` : '';
+    if (ui?.submitted) return `<h2>JUDGMENT</h2>${bar}<p class="hint">Your vote is cast. No take-backs. Maintain eye contact with no one.</p>`;
     return `
       <h2>JUDGMENT</h2>
+      ${bar}
       ${y.curse?.broken ? `<div class="cursecard broken">Your broken curse silences your vote — cast it anyway, for the record.</div>` : ''}
       <p class="hint">Who does Castaigne cast out?</p>
       <div class="targets">${(ui?.targets || []).map((t) => `<button class="targetbtn" data-action="vote" data-id="${t.id}">${esc(t.name)}</button>`).join('')}
@@ -493,16 +543,60 @@
   function phoneRising(v, y) {
     const ui = y.risingUI;
     if (!ui) return `<h2>THE LAST ACT</h2><p class="hint">Watch the TV. Pray to something local.</p>`;
-    if (ui.picked) return `<h2>THE LAST ACT — ROUND ${ui.round}</h2><p class="hint">You have chosen your stand. The dice decide.</p>`;
-    return `
-      <h2>THE LAST ACT — ROUND ${ui.round} of ${ui.rounds}</h2>
-      <p class="hint">The King in Yellow takes the stage. How do you resist?</p>
-      <div class="targets">
-        <button class="targetbtn" data-action="rising" data-stat="brawn">💪 BRAWN +${(ui.stats.brawn || 0) * 2} — hold the barricades</button>
-        <button class="targetbtn" data-action="rising" data-stat="wits">🧠 WITS +${(ui.stats.wits || 0) * 2} — read the counter-rite</button>
-        <button class="targetbtn" data-action="rising" data-stat="nerve">🕯 NERVE +${(ui.stats.nerve || 0) * 2} — stare it down</button>
+    const head = `
+      <h2>THE LAST ACT — SCENE ${ui.round} of ${ui.rounds}</h2>
+      <h3 class="scenetitle">${esc(ui.scene.title)}</h3>
+      <div class="trackrow">
+        <span class="track verses">🎻 ${ui.versesLeft == null ? 'verses uncounted' : ui.versesLeft + ' verses left'}</span>
+        <span class="track resolve">🕯 ${ui.resolve}/${ui.resolveMax} resolve</span>
+        <span class="track dc">🎲 beat ${ui.dc}</span>
       </div>
-      ${ui.canSpend ? `<label class="spendlabel"><input type="checkbox" id="spendItem" ${spendItem ? 'checked' : ''}> burn an item for +3</label>` : ''}`;
+      ${ui.lastLine ? `<p class="hint beat">${esc(ui.lastLine)}</p>` : ''}`;
+
+    // A surviving Masked must say, out loud and on the record, whose side they're on.
+    if (ui.mustDeclare) {
+      return `${head}
+        <p class="scenetext">${esc(ui.scene.text)}</p>
+        <div class="maskcard">🎭 <b>You are still wearing it.</b> The King is here, and the King does not distinguish between the town and its cast. Decide now — no take-backs.</div>
+        <div class="targets">
+          <button class="targetbtn" data-action="rising-mask" data-keep="0">Take the mask off and fight beside them <small>(your rolls unwind the King’s verses like everyone else’s)</small></button>
+          <button class="targetbtn abstain" data-action="rising-mask" data-keep="1">Keep it on and go on performing <small>(you still roll every scene — but a hit takes the town’s resolve instead. The dead won’t lend you a hand, and every scene runs harder for them. If the King takes the stage, you win alone.)</small></button>
+        </div>`;
+    }
+
+    // The dead.
+    if (ui.kind === 'spirit') {
+      if (ui.picked) return `${head}<p class="hint">👻 Your part in this scene is chosen. The dice decide.</p>`;
+      return `${head}
+        <p class="scenetext">${esc(ui.scene.text)}</p>
+        <p class="hint">👻 You are past saving and therefore extremely useful. Push someone living — or throw yourself at the Play directly.</p>
+        <h3>Lend your strength (+2 to their roll)</h3>
+        <p class="hint">No more than two of you can crowd one soul — a third pair of cold hands adds nothing. Spread out.</p>
+        <div class="targets small">${(ui.lendTargets || []).map((t) => `<button class="targetbtn" data-action="rising-lend" data-id="${t.id}">${esc(t.name)}</button>`).join('')}</div>
+        <h3>Or go at it yourself</h3>
+        <div class="targets small"><button class="targetbtn abstain" data-action="rising-wail">🕯 Wail against the King <small>(flat d20+4 vs ${ui.dc}; a hit unwinds a verse, a miss costs the town nothing)</small></button></div>`;
+    }
+
+    const forKing = ui.kind === 'masked';
+    if (ui.picked) {
+      const p = ui.pick || {};
+      return `${head}<p class="hint">${forKing ? 'The performance is blocked' : 'You have chosen your stand'}: <b>${esc((STATLABEL[p.stat] || '').replace(/^\S+\s/, ''))}</b>${p.spend ? ' · item burned' : ''}${p.push ? ' · everything you have' : ''}. The dice decide.</p>`;
+    }
+    const stanceBtn = (stat) => {
+      const mod = (ui.mods || {})[stat] || 0;
+      const tag = stat === ui.scene.favored
+        ? `<small class="favored">★ favored here${forKing ? '' : ' — a hit unwinds an extra verse'}</small>`
+        : stat === ui.scene.poor ? '<small class="poorstat">✗ the wrong tool for this scene</small>' : '';
+      return `<button class="targetbtn" data-action="rising" data-stat="${stat}">${STATLABEL[stat]} ${mod >= 0 ? '+' : ''}${mod} — ${esc(ui.scene.stances[stat])}${tag}</button>`;
+    };
+    return `${head}
+      <p class="scenetext">${esc(ui.scene.text)}</p>
+      ${forKing
+        ? `<div class="maskcard">🎭 <b>You kept it on.</b> You are still in this scene — on the other side of it. Land the roll and Castaigne loses resolve. Nobody dead will lend you a thing.</div>`
+        : ui.keepers ? `<div class="maskcard">🎭 ${ui.keepers} of the Masked still won’t take it off. They are performing against you, and every scene runs harder for it.</div>` : ''}
+      <div class="targets">${stanceBtn('brawn')}${stanceBtn('wits')}${stanceBtn('nerve')}</div>
+      ${ui.canSpend ? `<label class="spendlabel"><input type="checkbox" id="spendItem" ${spendItem ? 'checked' : ''}> 🔥 burn an item for +3</label>` : ''}
+      ${forKing ? '' : `<label class="spendlabel"><input type="checkbox" id="pushSelf" ${pushSelf ? 'checked' : ''}> ⚡ everything you have: <b>+3</b>, but a failure costs the town an extra resolve and you a point of sanity</label>`}`;
   }
 
   function phoneGameover(v, y) {
@@ -680,12 +774,16 @@
       case 'tarot-use': send({ type: 'tarot', use: true }); break;
       case 'tarot-decline': send({ type: 'tarot', use: false }); break;
       case 'spendXp': send({ type: 'spendXp', stat: btn.dataset.stat }); break;
-      case 'rising': send({ type: 'risingPick', stat: btn.dataset.stat, spend: !!document.getElementById('spendItem')?.checked }); break;
+      case 'rising': send({ type: 'risingPick', stat: btn.dataset.stat, spend: !!document.getElementById('spendItem')?.checked, push: !!document.getElementById('pushSelf')?.checked }); break;
+      case 'rising-lend': send({ type: 'risingSpirit', mode: 'lend', target: btn.dataset.id }); break;
+      case 'rising-wail': send({ type: 'risingSpirit', mode: 'wail' }); break;
+      case 'rising-mask': send({ type: 'risingMask', keep: btn.dataset.keep === '1' }); break;
       case 'photo': document.getElementById('photoInput')?.click(); break;
     }
   });
   document.addEventListener('change', (e) => {
     if (e.target.id === 'spendItem') spendItem = e.target.checked;
+    if (e.target.id === 'pushSelf') pushSelf = e.target.checked;
     if (e.target.id === 'photoInput' && e.target.files?.[0]) { agePhoto(e.target.files[0]); e.target.value = ''; }
   });
 
